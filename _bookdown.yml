@@ -1,4 +1,4 @@
-book_filename: "Machine Learning Theory & Papers"
+book_filename: "Machine Learning Theory"
 language:
 output_dir: "docs"
 delete_merged_file: true

@@ -101,8 +101,9 @@ div.csl-indent {
 <li class="chapter" data-level="" data-path="flowDiffusion.html"><a href="flowDiffusion.html#trainProcedure"><i class="fa fa-check"></i>Training procedure</a>
 <ul>
 <li class="chapter" data-level="" data-path="flowDiffusion.html"><a href="flowDiffusion.html#conditional-to-marginal"><i class="fa fa-check"></i>Conditional to marginal</a></li>
-</ul></li>
+<li class="chapter" data-level="" data-path="flowDiffusion.html"><a href="flowDiffusion.html#flow-matching"><i class="fa fa-check"></i>Flow matching</a></li>
 <li class="chapter" data-level="" data-path="flowDiffusion.html"><a href="flowDiffusion.html#gaussian-example"><i class="fa fa-check"></i>Gaussian example</a></li>
+</ul></li>
 </ul></li>
 <li class="chapter" data-level="" data-path="bibliography.html"><a href="bibliography.html"><i class="fa fa-check"></i>Bibliography</a></li>
 </ul>
@@ -339,9 +340,11 @@ Importantly, we don’t obtain the clean refactoring of <span class="math inline
 \]</span></p>
 </div>
 </div>
+<div id="flow-matching" class="section level3 unnumbered hasAnchor">
+<h3>Flow matching<a href="flowDiffusion.html#flow-matching" class="anchor-section" aria-label="Anchor link to header"></a></h3>
 </div>
-<div id="gaussian-example" class="section level2 unnumbered hasAnchor">
-<h2>Gaussian example<a href="flowDiffusion.html#gaussian-example" class="anchor-section" aria-label="Anchor link to header"></a></h2>
+<div id="gaussian-example" class="section level3 unnumbered hasAnchor">
+<h3>Gaussian example<a href="flowDiffusion.html#gaussian-example" class="anchor-section" aria-label="Anchor link to header"></a></h3>
 <p>The next order of business is to work out a concrete example. We begin by specifying a trivial conditional probability path:</p>
 <div class="definition">
 <p><span id="def:condGaussianPath" class="definition"><strong>Definition 1.1  (conditional Gaussian probability path) </strong></span>Consider a single point <span class="math inline">\(z\in \mathbb R^d\)</span>, the following <strong>Gaussian probability path</strong> continuously collapses <span class="math inline">\(p_{\mathrm{init}}\)</span> to <span class="math inline">\(\delta_z\)</span>:
@@ -366,6 +369,7 @@ For the special linear-scheduler case <span class="math inline">\(\alpha_t=t, \b
     \nabla \log p_t(x\mid z) = -\dfrac{x - \alpha_t z}{\beta_t^2}
 \]</span></p>
 
+</div>
 </div>
 </div>
 <h3>Bibliography<a href="bibliography.html#bibliography" class="anchor-section" aria-label="Anchor link to header"></a></h3>

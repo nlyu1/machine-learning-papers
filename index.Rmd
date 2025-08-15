@@ -46,5 +46,3 @@ link-citations: true
 
 # Preface {-}
 Continually updated notes for cool machine learning theory and papers. 
-
-1. 
