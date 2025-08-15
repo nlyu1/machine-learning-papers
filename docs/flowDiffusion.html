@@ -1,0 +1,381 @@
+<!DOCTYPE html>
+<html lang="" xml:lang="">
+<head>
+
+  <meta charset="utf-8" />
+  <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+  <title>1 Flow Matching and Diffusion | Machine Learning Theory &amp; Papers</title>
+  <meta name="description" content="1 Flow Matching and Diffusion | Machine Learning Theory &amp; Papers" />
+  <meta name="generator" content="bookdown 0.41 and GitBook 2.6.7" />
+
+  <meta property="og:title" content="1 Flow Matching and Diffusion | Machine Learning Theory &amp; Papers" />
+  <meta property="og:type" content="book" />
+  
+  
+  
+
+  <meta name="twitter:card" content="summary" />
+  <meta name="twitter:title" content="1 Flow Matching and Diffusion | Machine Learning Theory &amp; Papers" />
+  
+  
+  
+
+<meta name="author" content="Nicholas Lyu" />
+
+
+<meta name="date" content="2025-08-15" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black" />
+  
+  
+<link rel="prev" href="index.html"/>
+<link rel="next" href="bibliography.html"/>
+<script src="libs/jquery-3.6.0/jquery-3.6.0.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/fuse.js@6.4.6/dist/fuse.min.js"></script>
+<link href="libs/gitbook-2.6.7/css/style.css" rel="stylesheet" />
+<link href="libs/gitbook-2.6.7/css/plugin-table.css" rel="stylesheet" />
+<link href="libs/gitbook-2.6.7/css/plugin-bookdown.css" rel="stylesheet" />
+<link href="libs/gitbook-2.6.7/css/plugin-highlight.css" rel="stylesheet" />
+<link href="libs/gitbook-2.6.7/css/plugin-search.css" rel="stylesheet" />
+<link href="libs/gitbook-2.6.7/css/plugin-fontsettings.css" rel="stylesheet" />
+<link href="libs/gitbook-2.6.7/css/plugin-clipboard.css" rel="stylesheet" />
+
+
+
+
+
+
+
+
+<link href="libs/anchor-sections-1.1.0/anchor-sections.css" rel="stylesheet" />
+<link href="libs/anchor-sections-1.1.0/anchor-sections-hash.css" rel="stylesheet" />
+<script src="libs/anchor-sections-1.1.0/anchor-sections.js"></script>
+
+
+
+<style type="text/css">
+  
+  div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+</style>
+<style type="text/css">
+/* Used with Pandoc 2.11+ new --citeproc when CSL is used */
+div.csl-bib-body { }
+div.csl-entry {
+  clear: both;
+}
+.hanging div.csl-entry {
+  margin-left:2em;
+  text-indent:-2em;
+}
+div.csl-left-margin {
+  min-width:2em;
+  float:left;
+}
+div.csl-right-inline {
+  margin-left:2em;
+  padding-left:1em;
+}
+div.csl-indent {
+  margin-left: 2em;
+}
+</style>
+
+</head>
+
+<body>
+
+
+
+  <div class="book without-animation with-summary font-size-2 font-family-1" data-basepath=".">
+
+    <div class="book-summary">
+      <nav role="navigation">
+
+<ul class="summary">
+<li class="chapter" data-level="" data-path="index.html"><a href="index.html"><i class="fa fa-check"></i>Preface</a></li>
+<li class="chapter" data-level="1" data-path="flowDiffusion.html"><a href="flowDiffusion.html"><i class="fa fa-check"></i><b>1</b> Flow Matching and Diffusion</a>
+<ul>
+<li class="chapter" data-level="" data-path="flowDiffusion.html"><a href="flowDiffusion.html#prelim"><i class="fa fa-check"></i>Modeling</a></li>
+<li class="chapter" data-level="" data-path="flowDiffusion.html"><a href="flowDiffusion.html#trainProcedure"><i class="fa fa-check"></i>Training procedure</a>
+<ul>
+<li class="chapter" data-level="" data-path="flowDiffusion.html"><a href="flowDiffusion.html#conditional-to-marginal"><i class="fa fa-check"></i>Conditional to marginal</a></li>
+</ul></li>
+</ul></li>
+<li class="chapter" data-level="" data-path="bibliography.html"><a href="bibliography.html"><i class="fa fa-check"></i>Bibliography</a></li>
+</ul>
+
+      </nav>
+    </div>
+
+    <div class="book-body">
+      <div class="body-inner">
+        <div class="book-header" role="navigation">
+          <h1>
+            <i class="fa fa-circle-o-notch fa-spin"></i><a href="./">Machine Learning Theory &amp; Papers</a>
+          </h1>
+        </div>
+
+        <div class="page-wrapper" tabindex="-1" role="main">
+          <div class="page-inner">
+
+            <section class="normal" id="section-">
+<div id="flowDiffusion" class="section level1 hasAnchor" number="1">
+<h1><span class="header-section-number">1</span> Flow Matching and Diffusion<a href="flowDiffusion.html#flowDiffusion" class="anchor-section" aria-label="Anchor link to header"></a></h1>
+<p>This section explores flow matching and diffusion models based on the <a href="https://diffusion.csail.mit.edu/">MIT lecture series</a>. Also see lecture notes <span class="citation">(<a href="#ref-holderrieth2025introduction">Holderrieth and Erives 2025</a>)</span> and <a href="#https://diffusion.csail.mit.edu/#lectures">materials</a>. More advanced, supplemental proofs are referenced from <span class="citation">(<a href="#ref-li2025unified">Li 2025</a>)</span>.</p>
+<div id="prelim" class="section level2 unnumbered hasAnchor">
+<h2>Modeling<a href="flowDiffusion.html#prelim" class="anchor-section" aria-label="Anchor link to header"></a></h2>
+<ul>
+<li>We presume an underlying, generally unknown, data distribution <span class="math inline">\(p_{\mathrm{data}}\)</span> supported on <span class="math inline">\(\mathbb R^d\)</span>.</li>
+<li>Dataset consists of finite samples <span class="math inline">\(\{z_1, \dots, z_N\}\sim p_{\mathrm{data}}\)</span>, effectively yielding an empirical distribution <span class="math inline">\(\hat p_{\mathrm{data}}\)</span>.</li>
+<li>Unconditional generation consists of (1) estimating <span class="math inline">\(p_{\mathrm{data}}\)</span> from <span class="math inline">\(\hat p_{\mathrm{data}}\)</span>, then drawing samples from the estimate.</li>
+<li>Assuming a joint distribution with some conditioning variable <span class="math inline">\(y\sim p_y\)</span>, conditional distribution consists of sampling from the conditional distribution <span class="math inline">\(p(\cdot \mid y)\)</span>.</li>
+</ul>
+<p>In flow models, we model the data via a <strong>mapping</strong> <span class="math inline">\(u:\mathbb R^d\to \mathbb R^d\)</span> between standard Gaussian initial distribution <span class="math inline">\(p_{\mathrm{init}}=\mathcal N(0, I_d)\)</span> and the data distribution. This mapping is modeled as a <span style="color:blue">flow whose time-derivative is parameterized by a deep model</span>. Given a vector field
+<span class="math display">\[
+    (X_t, t)\mapsto u_t(X_t) \quad \text{of type}\quad u_{(\cdot)}(\cdot): \mathbb R^d\times \mathbb R\to \mathbb R^d
+\]</span>
+Treating the vector field <span class="math inline">\(u_t\)</span> as an integrable operator, the flow <span class="math inline">\(\Phi_t: \mathbb R^d\to \mathbb R^d\)</span> is obtained by integrating the vector field from <span class="math inline">\(0\)</span> to time <span class="math inline">\(t\)</span>:
+<span class="math display">\[
+    \Phi_t(x_0) = \exp \left[\int_0^t u_\tau\, d\tau\right]x_0 \, \iff \partial_{t} \Phi_t(x_0) = u_t\left[\Phi_t(x_0)\right]
+\]</span>
+Such model above have deterministic dynamics, i.e. once <span class="math inline">\(x_0\sim p_{\mathrm{init}}\)</span> is fixed, the sample is fixed. We may instead consider stochastic dynamics:
+<span class="math display">\[
+    dX_t = u_t(X_t)\, dt + \sigma_t\, dW_t \iff \Phi_t(x_0) = \exp \left[
+       \int_0^t u_\tau \, d\tau + \int_0^t \sigma_\tau \, dW_\tau
+    \right] x_0
+\]</span>
+where <span class="math inline">\(W_t\)</span> is the standard Brownian motion. This concludes our specification of generation procedure as a function of model parameters <span class="math inline">\(\theta\)</span> and <span class="math inline">\(\sigma_t\)</span>. To generate a new data sample from our model:</p>
+<ol style="list-style-type: decimal">
+<li>Sample <span class="math inline">\(\epsilon\sim p_{\mathrm{init}}\)</span>.</li>
+<li>Compute <span class="math inline">\(x_1 = \Phi_1(x_0=\epsilon) = \exp \left[  \int_0^1 u_\tau \, d\tau + \int_0^1 \sigma^t_\tau \, dW_\tau  \right] \epsilon\)</span> using SDE approximation methods.</li>
+</ol>
+</div>
+<div id="trainProcedure" class="section level2 unnumbered hasAnchor">
+<h2>Training procedure<a href="flowDiffusion.html#trainProcedure" class="anchor-section" aria-label="Anchor link to header"></a></h2>
+<p>The next order of business is to train <span class="math inline">\(\theta\)</span> so that <span class="math inline">\(x_1=\Phi_1(p_{\mathrm{init}})=\approx p_{\mathrm{data}}\)</span>. The main idea is to integrate tractable conditional solutions to obtain the full, marginalized solution.</p>
+<div class="definition">
+<p><span id="def:condGaussianPath" class="definition"><strong>Definition 1.1  (conditional Gaussian probability path) </strong></span>Consider a single point <span class="math inline">\(z\in \mathbb R^d\)</span>, the following <strong>Gaussian probability path</strong> continuously collapses <span class="math inline">\(p_{\mathrm{init}}\)</span> to <span class="math inline">\(\delta_z\)</span>:
+<span class="math display">\[
+    p_t(\cdot\mid z) = \mathcal N(\alpha_t z, \beta_t^2 I_d)
+\]</span>
+where <span class="math inline">\(\alpha_t, \beta_t\)</span> are <strong>noise schedulers</strong> satisfying <span class="math inline">\(\alpha_0=\beta_1=0\)</span> and <span class="math inline">\(\alpha_1=\beta_0=1\)</span>.</p>
+</div>
+<p>Given a (continuous) probability path <span class="math inline">\(p_{(\cdot)}(\cdot): \mathbb R\to \Delta(\mathbb R^d)\)</span>, we can relate it to a vector field <span class="math inline">\(u_{(\cdot)}:\mathbb R\times \mathbb R^d\to \mathbb R^d\)</span> which realizes it as follows:</p>
+<div class="theorem">
+<p><span id="thm:contEq" class="theorem"><strong>Theorem 1.1  (continuity equation) </strong></span>Under regularity conditions, the time-dependent probability path <span class="math inline">\(\{p_t\}\)</span> is generated by the vector field <span class="math inline">\(\{u_t\}\)</span> iff
+<span class="math display">\[
+    \exp \left[
+        \int_0^\tau u_\tau \, d\tau
+    \right](\epsilon \sim p_0) \sim p_t \iff \forall x, \tau: \partial_{t} \big|_\tau\, p_t = -\nabla \cdot (u_\tau \rho_\tau)
+\]</span>
+Note again that <span class="math inline">\(\exp \left[\int_0^\tau u_\tau \, d\tau \right](\epsilon \sim p_0)\)</span> denotes the variable which satisfies <span class="math inline">\(\partial_{t} x_t = u_t(x_t)\)</span> and <span class="math inline">\(x_0 = \epsilon\sim p_0\)</span>.</p>
+</div>
+<details>
+<summary>
+Use test function and reverse product rule, divergence theorem. The main idea is to write <span class="math inline">\(\partial_{t} \mathbb{E}_{p_t}[f]\)</span> as <span class="math inline">\(\mathbb{E}_{\partial_{t} p_t}[f]\)</span> as well as a <span class="math inline">\(f\)</span>-integral. Expand the <span class="math inline">\(f\)</span>-integral using chain rule and product rule, and apply divergence theorem to rid of one term
+</summary>
+Consider arbitrary, time-invariant smooth test function <span class="math inline">\(f\)</span>. First convince ourselves that we have
+<span class="math display">\[
+    \int f(x_t) p_0(x_0)\, dx_0 = \int f(x_t) p_t(x_t)\, dx_t
+\]</span>
+To see this rigorously, let <span class="math inline">\(x_t = \Phi_t(x_0)\)</span>, then by standard chain rule we have <span class="math inline">\(dx_t = \det (D\Phi_t)\, dx_0\)</span>. On the other hand, by pushforward measure we have <span class="math inline">\(p_t(\Phi_t(x_0)) = p_0(x_0) \det^{-1} (D\Phi_t)\)</span>. Proceeding:
+<span class="math display">\[\begin{align}
+    \partial_{t} \mathbb{E}_{p_t} [f]
+    &amp;= \partial_{t} \int f(x_t) p_0(x_0)\, dx_0 = \partial_{t} \int f\left[\exp \left(
+        \int_0^t u_t\, d\tau
+    \right) x_0 \right] p_0(x_0)\, dx_0 \\
+    &amp;= \int \left[\nabla \big|_{x_t} f \right]\cdot u_t(x_t) \left[p_0(x_0)\, dx_0\right]
+    = \int \left[\nabla \big|_{x_t} f \right]\cdot \left[u_t(x_t) p_t(x_t)\right]\, dx_t \\
+    &amp;= \int \nabla \cdot (f u_t p_t)\big|_{x_t}  - f(x_t) \nabla\cdot (u_tp_t)\big|_{x_t} \, dx_t
+    = -\int f(x)\, \nabla \cdot (u_t p_t)\, dx
+\end{align}\]</span>
+The first part vanishes since <span class="math inline">\(p_t\)</span> vanishes on far boundaries.
+On the other hand, we also have
+<span class="math display">\[\begin{align}
+    \partial_{t} \mathbb{E}_{p_t} [f]
+    &amp;= \partial_{t} \int f(x) p_t(x)\, dx = \int f(x)\partial_{t} p_t(x)\, dx
+\end{align}\]</span>
+Combining, we obtain <span class="math inline">\(\partial_{t} p_t = -\nabla \cdot (u_t p_t)\)</span>, as desired.
+</details>
+<p>Salient points:</p>
+<ol style="list-style-type: decimal">
+<li>Given <span class="math inline">\(u_t\)</span>, we can use it to compute <span class="math inline">\(\partial_{t} p_t\)</span>; given <span class="math inline">\(p_0\)</span>, this gives us the rest of <span class="math inline">\(p_t\)</span>.</li>
+<li>Given <span class="math inline">\(\{p_t\}\)</span>, we can obtain a (non-unique) vector field which generates it by computing <span class="math inline">\(\partial_{t} p_t\)</span> and fitting it to the divergence. This is always possible under regularity conditions because vector fields have more degrees of freedom.</li>
+</ol>
+<div class="theorem">
+<p><span id="thm:fokkerPlanck" class="theorem"><strong>Theorem 1.2  (Fokker-Planck) </strong></span>Under regularity conditions, the time-dependent probability path <span class="math inline">\(\{p_t\}\)</span> is generated by the vector field <span class="math inline">\(\{u_t\}\)</span> and volatility process <span class="math inline">\(\sigma_t\)</span> or, mathematically as below:
+<span class="math display">\[
+    \exp \left[
+        \int_0^t u_\tau \, d\tau + \int_0^t \sigma_\tau dW_\tau
+    \right](\epsilon \sim p_0) \sim p_t
+\]</span>
+if and only if the following generalized divergence theorem is satisfied:
+<span class="math display">\[
+    \forall x, \tau: \partial_{t} \big|_\tau\, p_t = -\nabla \cdot (u_\tau \rho_\tau) + \dfrac{\sigma_\tau^2}{2} \nabla^2 p_\tau, \quad \nabla^2 p \equiv \nabla \cdot (\nabla p) = \mathrm{tr}(H_p)
+\]</span>
+Again, note that <span class="math inline">\(u_t\)</span> is a vector field (differentiation operator) thus acts on scalar fields (or random variables) like <span class="math inline">\(p_t\)</span> by application (so we need to apply chain rule), while <span class="math inline">\(\sigma_t\)</span> is simply a scalar, thus acting by multiplication.</p>
+</div>
+<details>
+<summary>
+Use test function and reverse product rule, divergence theorem
+</summary>
+Fixing <span class="math inline">\(p_0\)</span>, let <span class="math inline">\(x_t=\Phi_t(x_0\sim \p_0)\)</span> denote the <em>random variable</em> result from applying flow; note that <span class="math inline">\(p_0:\mathbb R^d\to \mathbb R\)</span> is a distribution, while <span class="math inline">\(X_0: \Omega\to \mathbb R^d\)</span> is a random variable. To the first order, we obtain
+<span class="math display">\[
+    x_{t+h} \approx x_t + h\, u_t(x_t) + \sigma_t (W_{t+h} - W_t)
+\]</span>
+Here <span class="math inline">\(u_t(x_t)\)</span> is the tangent random variable denoting the application of <span class="math inline">\(u_t\)</span> to the crystallization of <span class="math inline">\(x_t\)</span>. Given a scalar function <span class="math inline">\(f\)</span>, we obtain
+<span class="math display">\[\begin{aligned}
+    f(x_{t+h}) - f(x_t)
+    &amp;\approx (\nabla \big|_{x_t} f) \cdot \left[
+        h\, u_t(x_t) + \sigma_t(W_{t+h} - W_t)\right] \\
+    &amp;\quad + \dfrac 1 2 \left[
+        h\, u_t(x_t) + \sigma_t(W_{t+h} - W_t)\right]^T \left(H_f \big|_{x_t}\right) \left[
+        h\, u_t(x_t) + \sigma_t(W_{t+h} - W_t)\right] \\
+    &amp;= (\nabla f) \cdot \left[
+        h\, u_t(x_t) + \sigma_t(W_{t+h} - W_t)\right]
+        + \dfrac{h^2} 2 u_t(x_t)^T \, H_f \, u_t(x_t) \\
+        &amp;\quad + h \sigma_t \, u_t(x_t) H_f (W_{t+h} - W_t)
+        + \dfrac{\sigma_t^2}{2} (W_{t+h} - W_t)^T H_f  (W_{t+h} - W_t)
+\end{aligned}\]</span>
+Taking expectation, note that <span class="math inline">\(\mathbb{E}[W_{t+h} - W_t]=0\)</span> since <span class="math inline">\(W_{t+h} - W_t\sim \mathcal N(0, \sigma^2=h)\)</span>. Also note that <span class="math inline">\(\mathbb{E}[h^t Ah]=\mathbb{E}\mathrm{tr}(A hh^T)=\mathrm{tr}(A)\)</span> for <span class="math inline">\(h\sim \mathcal N(0, I_d)\)</span>, then
+<span class="math display">\[\begin{aligned}
+    \mathbb{E}[f(x_{t+h}) - f(x_t)]
+    &amp;=  \mathbb{E}\left[
+    (\nabla f) \cdot u_t(x_t)\, h + \dfrac{\sigma_t^2}{2} \mathrm{tr}(H_f) \, h + O(h^2)\right] \\
+    \partial_{t} \mathbb{E}[f(x_t)] &amp;= \mathbb{E}\left[(\nabla f)\cdot u_t(x_t) + \dfrac{\sigma_t^2}{2} \mathrm{tr}(H_f)\right]
+\end{aligned}\]</span>
+Great! Next up, expand the integral and apply reverse product rule piece by piece.
+The first term is familiar from continuity equation <a href="flowDiffusion.html#thm:contEq">1.1</a>:
+<span class="math display">\[\begin{aligned}
+    \mathbb{E}[(\nabla f) \cdot u_t(x_t)]
+    &amp;= \int p_t(x) (\nabla_f) \cdot u_t(x)\, dx
+    = -\int f(x) \nabla \cdot (p_t u_t)\, dx
+\end{aligned}\]</span>
+By applying reverse product rule twice, the second term is seen to be
+<span class="math display">\[
+    \mathbb{E}[(\nabla f) \cdot u_t(x_t)]
+    = \dfrac{\sigma_t^2}{2} \int (\Delta \big|_x f) p_t(x)\, dx
+    = \dfrac{\sigma_t^2}{2} \int f(x) \Delta p_t\, dx
+\]</span>
+Combining, we have proved that for any regular scalar function <span class="math inline">\(f\)</span>, we have
+<span class="math display">\[\begin{aligned}
+    \partial_{t} \mathbb{E}[f(x_t)] = \int f(x) \left(\nabla \cdot (p_tu_t) + \dfrac{\sigma^2}{2} \Delta p_t\right)\, dx = \int f(x) \partial_{t} p_t(x)\, dx
+\end{aligned}\]</span>
+This shows that <span class="math inline">\(\partial_{t} p_t=\dots\)</span> almost surely; the necessary direction follows from uniqueness of SDEs.
+</details>
+<div id="conditional-to-marginal" class="section level3 unnumbered hasAnchor">
+<h3>Conditional to marginal<a href="flowDiffusion.html#conditional-to-marginal" class="anchor-section" aria-label="Anchor link to header"></a></h3>
+<p>The following theorem is the main tool for converting conditional models into marginal ones.</p>
+<div class="theorem">
+<p><span id="thm:margTrick" class="theorem"><strong>Theorem 1.3  (marginalization trick) </strong></span>Fixing <span class="math inline">\(p_{\mathrm{data}}\)</span> and conditional probability paths <span class="math inline">\(p_t(\cdot\mid z)\)</span> interpolating between <span class="math inline">\(p_{\mathrm{init}}\)</span> and <span class="math inline">\(\delta_z\)</span> (e.g. definition <a href="flowDiffusion.html#def:condGaussianPath">1.1</a>). For each <span class="math inline">\(z\in \mathbb R^d\)</span> let <span class="math inline">\(u^*_t(\cdot\mid z):\mathbb R^d\to \mathbb R^d\)</span> denote a vector field which realizes the conditional probability path, i.e. 
+<span class="math display">\[
+    \exp \left[
+        \int_0^t
+            u^*_\tau(\cdot\mid z)\, d\tau
+        \, d\tau
+    \right]\, (\epsilon \sim p_{\mathrm{init}}) \sim p_t(\cdot \mid z)
+\]</span>
+Then the marginal vector field defined as follows
+<span class="math display">\[
+    u_t(x) \equiv \int u_t^*(x\mid z) p_t(z\mid x)\, dz, \quad p_t(z\mid x) = \dfrac{p_t(x\mid z) p_{\mathrm{data}}(z)}{p_t(x)}
+\]</span>
+realizes the marginal probability distribution
+<span class="math display">\[
+    \exp \left[
+        \int_0^t
+            u^*_\tau\, d\tau
+    \right]\, (\epsilon \sim p_{\mathrm{init}}) \sim p_t = \int p_t(\cdot\mid z)\, dz
+\]</span></p>
+</div>
+
+</div>
+</div>
+</div>
+<h3>Bibliography<a href="bibliography.html#bibliography" class="anchor-section" aria-label="Anchor link to header"></a></h3>
+<div id="refs" class="references csl-bib-body hanging-indent">
+<div id="ref-holderrieth2025introduction" class="csl-entry">
+Holderrieth, Peter, and Ezra Erives. 2025. <span>“Introduction to Flow Matching and Diffusion Models.”</span><br />
+url<span>https://diffusion.csail.mit.edu/docs/lecture-notes.pdf</span>.
+<div id="ref-li2025unified" class="csl-entry">
+Li, Marvin. 2025. <span>“In the Blink of an Eye: A Unified Theory for Feature Emergence in Generative Models.”</span> Honors thesis, Cambridge, MA: Harvard College. <a href="https://marvinfli.github.io/files/thesis.pdf">https://marvinfli.github.io/files/thesis.pdf</a>.
+</div>
+</div>
+            </section>
+
+          </div>
+        </div>
+      </div>
+<a href="index.html" class="navigation navigation-prev " aria-label="Previous page"><i class="fa fa-angle-left"></i></a>
+<a href="bibliography.html" class="navigation navigation-next " aria-label="Next page"><i class="fa fa-angle-right"></i></a>
+    </div>
+  </div>
+<script src="libs/gitbook-2.6.7/js/app.min.js"></script>
+<script src="libs/gitbook-2.6.7/js/clipboard.min.js"></script>
+<script src="libs/gitbook-2.6.7/js/plugin-search.js"></script>
+<script src="libs/gitbook-2.6.7/js/plugin-sharing.js"></script>
+<script src="libs/gitbook-2.6.7/js/plugin-fontsettings.js"></script>
+<script src="libs/gitbook-2.6.7/js/plugin-bookdown.js"></script>
+<script src="libs/gitbook-2.6.7/js/jquery.highlight.js"></script>
+<script src="libs/gitbook-2.6.7/js/plugin-clipboard.js"></script>
+<script>
+gitbook.require(["gitbook"], function(gitbook) {
+gitbook.start({
+"sharing": {
+"github": false,
+"facebook": true,
+"twitter": true,
+"linkedin": false,
+"weibo": false,
+"instapaper": false,
+"vk": false,
+"whatsapp": false,
+"all": ["facebook", "twitter", "linkedin", "weibo", "instapaper"]
+},
+"fontsettings": {
+"theme": "white",
+"family": "sans",
+"size": 2
+},
+"edit": {
+"link": null,
+"text": null
+},
+"history": {
+"link": null,
+"text": null
+},
+"view": {
+"link": null,
+"text": null
+},
+"download": null,
+"search": {
+"engine": "fuse",
+"options": null
+},
+"toc": {
+"collapse": "subsection"
+}
+});
+});
+</script>
+
+<!-- dynamically load mathjax for compatibility with self-contained -->
+<script>
+  (function () {
+    var script = document.createElement("script");
+    script.type = "text/javascript";
+    var src = "true";
+    if (src === "" || src === "true") src = "https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.9/latest.js?config=TeX-MML-AM_CHTML";
+    if (location.protocol !== "file:")
+      if (/^https?:/.test(src))
+        src = src.replace(/^https?:/, '');
+    script.src = src;
+    document.getElementsByTagName("head")[0].appendChild(script);
+  })();
+</script>
+</body>
+
+</html>

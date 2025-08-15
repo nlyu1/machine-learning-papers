@@ -1,0 +1,479 @@
+<!DOCTYPE html>
+<html lang="" xml:lang="">
+<head>
+
+  <meta charset="utf-8" />
+  <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+  <title>6 Exploration | Reinforcement Learning</title>
+  <meta name="description" content="6 Exploration | Reinforcement Learning" />
+  <meta name="generator" content="bookdown 0.41 and GitBook 2.6.7" />
+
+  <meta property="og:title" content="6 Exploration | Reinforcement Learning" />
+  <meta property="og:type" content="book" />
+  
+  
+  
+
+  <meta name="twitter:card" content="summary" />
+  <meta name="twitter:title" content="6 Exploration | Reinforcement Learning" />
+  
+  
+  
+
+<meta name="author" content="Nicholas Lyu" />
+
+
+<meta name="date" content="2025-07-03" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black" />
+  
+  
+<link rel="prev" href="rlLLMs.html"/>
+<link rel="next" href="bibliography.html"/>
+<script src="libs/jquery-3.6.0/jquery-3.6.0.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/fuse.js@6.4.6/dist/fuse.min.js"></script>
+<link href="libs/gitbook-2.6.7/css/style.css" rel="stylesheet" />
+<link href="libs/gitbook-2.6.7/css/plugin-table.css" rel="stylesheet" />
+<link href="libs/gitbook-2.6.7/css/plugin-bookdown.css" rel="stylesheet" />
+<link href="libs/gitbook-2.6.7/css/plugin-highlight.css" rel="stylesheet" />
+<link href="libs/gitbook-2.6.7/css/plugin-search.css" rel="stylesheet" />
+<link href="libs/gitbook-2.6.7/css/plugin-fontsettings.css" rel="stylesheet" />
+<link href="libs/gitbook-2.6.7/css/plugin-clipboard.css" rel="stylesheet" />
+
+
+
+
+
+
+
+
+<link href="libs/anchor-sections-1.1.0/anchor-sections.css" rel="stylesheet" />
+<link href="libs/anchor-sections-1.1.0/anchor-sections-hash.css" rel="stylesheet" />
+<script src="libs/anchor-sections-1.1.0/anchor-sections.js"></script>
+
+
+
+<style type="text/css">
+  
+  div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+</style>
+<style type="text/css">
+/* Used with Pandoc 2.11+ new --citeproc when CSL is used */
+div.csl-bib-body { }
+div.csl-entry {
+  clear: both;
+}
+.hanging div.csl-entry {
+  margin-left:2em;
+  text-indent:-2em;
+}
+div.csl-left-margin {
+  min-width:2em;
+  float:left;
+}
+div.csl-right-inline {
+  margin-left:2em;
+  padding-left:1em;
+}
+div.csl-indent {
+  margin-left: 2em;
+}
+</style>
+
+</head>
+
+<body>
+
+
+
+  <div class="book without-animation with-summary font-size-2 font-family-1" data-basepath=".">
+
+    <div class="book-summary">
+      <nav role="navigation">
+
+<ul class="summary">
+<li class="chapter" data-level="" data-path="index.html"><a href="index.html"><i class="fa fa-check"></i>Preface</a></li>
+<li class="chapter" data-level="1" data-path="mdp.html"><a href="mdp.html"><i class="fa fa-check"></i><b>1</b> Markov Decision Processes</a>
+<ul>
+<li class="chapter" data-level="" data-path="mdp.html"><a href="mdp.html#MDP"><i class="fa fa-check"></i>Preliminaries</a></li>
+<li class="chapter" data-level="" data-path="mdp.html"><a href="mdp.html#vFunctions"><i class="fa fa-check"></i>Value functions</a></li>
+<li class="chapter" data-level="" data-path="mdp.html"><a href="mdp.html#optimalityMDP"><i class="fa fa-check"></i>Optimality</a></li>
+<li class="chapter" data-level="" data-path="mdp.html"><a href="mdp.html#policyEval"><i class="fa fa-check"></i>Policy evaluation</a></li>
+<li class="chapter" data-level="" data-path="mdp.html"><a href="mdp.html#optimalSolutions"><i class="fa fa-check"></i>Optimal solutions</a></li>
+</ul></li>
+<li class="chapter" data-level="2" data-path="sampMDP.html"><a href="sampMDP.html"><i class="fa fa-check"></i><b>2</b> Sample-based MDP solutions</a>
+<ul>
+<li class="chapter" data-level="" data-path="sampMDP.html"><a href="sampMDP.html#polEval"><i class="fa fa-check"></i>Model-free policy evaluation</a></li>
+<li class="chapter" data-level="" data-path="sampMDP.html"><a href="sampMDP.html#modelFreeControl"><i class="fa fa-check"></i>Model free control</a></li>
+</ul></li>
+<li class="chapter" data-level="3" data-path="polMethods.html"><a href="polMethods.html"><i class="fa fa-check"></i><b>3</b> Policy Methods</a>
+<ul>
+<li class="chapter" data-level="" data-path="polMethods.html"><a href="polMethods.html#pg"><i class="fa fa-check"></i>Vanilla policy gradient</a></li>
+<li class="chapter" data-level="" data-path="polMethods.html"><a href="polMethods.html#pgReduceVar"><i class="fa fa-check"></i>Reducing variance</a>
+<ul>
+<li class="chapter" data-level="" data-path="polMethods.html"><a href="polMethods.html#pgBaseline"><i class="fa fa-check"></i>Baseline</a></li>
+<li class="chapter" data-level="" data-path="polMethods.html"><a href="polMethods.html#advEstimate"><i class="fa fa-check"></i>Generalized Advantage Estimation</a></li>
+</ul></li>
+<li class="chapter" data-level="" data-path="polMethods.html"><a href="polMethods.html#ppo"><i class="fa fa-check"></i>Off-policy, conservative updates</a></li>
+</ul></li>
+<li class="chapter" data-level="4" data-path="iRL.html"><a href="iRL.html"><i class="fa fa-check"></i><b>4</b> Inverse RL</a>
+<ul>
+<li class="chapter" data-level="" data-path="iRL.html"><a href="iRL.html#imlEasy"><i class="fa fa-check"></i>Zeroth-order approaches</a></li>
+<li class="chapter" data-level="" data-path="iRL.html"><a href="iRL.html#rewardShaping"><i class="fa fa-check"></i>Reward shaping</a></li>
+<li class="chapter" data-level="" data-path="iRL.html"><a href="iRL.html#iRLClassical"><i class="fa fa-check"></i>Classical inverse RL</a></li>
+<li class="chapter" data-level="" data-path="iRL.html"><a href="iRL.html#maxEntropyiRL"><i class="fa fa-check"></i>Max-entropy IRL</a></li>
+</ul></li>
+<li class="chapter" data-level="5" data-path="rlLLMs.html"><a href="rlLLMs.html"><i class="fa fa-check"></i><b>5</b> RL for LLMs</a>
+<ul>
+<li class="chapter" data-level="" data-path="rlLLMs.html"><a href="rlLLMs.html#rewardPreference"><i class="fa fa-check"></i>Preference-based reward modeling</a></li>
+<li class="chapter" data-level="" data-path="rlLLMs.html"><a href="rlLLMs.html#dpo"><i class="fa fa-check"></i>Direct Preference Optimization</a></li>
+</ul></li>
+<li class="chapter" data-level="6" data-path="exploration.html"><a href="exploration.html"><i class="fa fa-check"></i><b>6</b> Exploration</a>
+<ul>
+<li class="chapter" data-level="" data-path="exploration.html"><a href="exploration.html#bandits"><i class="fa fa-check"></i>Multi-arm bandit</a></li>
+<li class="chapter" data-level="" data-path="exploration.html"><a href="exploration.html#lrLB"><i class="fa fa-check"></i>Lai-Robins lower bound</a></li>
+<li class="chapter" data-level="" data-path="exploration.html"><a href="exploration.html#ucb"><i class="fa fa-check"></i>Upper confidence bound method</a></li>
+<li class="chapter" data-level="" data-path="exploration.html"><a href="exploration.html#bayesianBandit"><i class="fa fa-check"></i>Bayesian bandit</a></li>
+<li class="chapter" data-level="" data-path="exploration.html"><a href="exploration.html#mdpExploration"><i class="fa fa-check"></i>Exploration in MDPs</a></li>
+</ul></li>
+<li class="chapter" data-level="" data-path="bibliography.html"><a href="bibliography.html"><i class="fa fa-check"></i>Bibliography</a></li>
+</ul>
+
+      </nav>
+    </div>
+
+    <div class="book-body">
+      <div class="body-inner">
+        <div class="book-header" role="navigation">
+          <h1>
+            <i class="fa fa-circle-o-notch fa-spin"></i><a href="./">Reinforcement Learning</a>
+          </h1>
+        </div>
+
+        <div class="page-wrapper" tabindex="-1" role="main">
+          <div class="page-inner">
+
+            <section class="normal" id="section-">
+<div id="exploration" class="section level1 hasAnchor" number="6">
+<h1><span class="header-section-number">6</span> Exploration<a href="exploration.html#exploration" class="anchor-section" aria-label="Anchor link to header"></a></h1>
+<ol style="list-style-type: decimal">
+<li>Multi-armed bandit (MAB) = MDP with memoryless environment and one state. It provides a reduced case for analyzing exploration v. exploitation.
+<ul>
+<li>Generalization to <span class="math inline">\(|\mathcal S|&gt;1\)</span> states = <strong>contextual bandit</strong> = MDP with memoryless environment.</li>
+</ul></li>
+<li>Lai-Robbins lower bound (theorem <a href="exploration.html#thm:regretLowerBound">6.1</a>): regret grows at least as <span class="math inline">\(\log t\)</span>. <span style="color:blue">This is an exemplary proof using deviations theory.</span></li>
+<li>Optimism dominates pessimism in face of uncertainty:
+<ul>
+<li>UCB algorithm and regret bound @(thm:ucbRegret).</li>
+<li>LCB algorithm is inherently greedy.</li>
+</ul></li>
+<li><a href="exploration.html#bayesianBandit">Bayesian setup</a>: bayesian regret and Thompson sampling, which implements probability matching.</li>
+</ol>
+<div id="bandits" class="section level2 unnumbered hasAnchor">
+<h2>Multi-arm bandit<a href="exploration.html#bandits" class="anchor-section" aria-label="Anchor link to header"></a></h2>
+<div class="definition">
+<p><span id="def:multiArmBandit" class="definition"><strong>Definition 6.1  (multiarmed bandits) </strong></span>A multi-armed bandit consists of a known set of <span class="math inline">\(m\)</span> actions, <span class="math inline">\(\mathcal R^a(r)=\mathbb P(r\mid a)\)</span> an unknown yet stationary distribution over rewards. At each step, the agent selects action <span class="math inline">\(a_t\in \mathcal A\)</span> and the environment generates a reward. The goal is the maximize the cumulative reward <span class="math inline">\(\sum_{\tau=1}^t r_\tau\)</span>.</p>
+</div>
+<div class="definition">
+<p><span id="def:unlabeled-div-18" class="definition"><strong>Definition 6.2  (regret) </strong></span>Consider the following definitions; note that recall is a statistical average definition, and that minimizing regret = maximizing expected cumulative reward.</p>
+<ul>
+<li><strong>Action-value</strong> <span class="math inline">\(Q(a)=\mathbb E[r\mid a]\)</span> denotes the mean reward for action <span class="math inline">\(a\)</span>.</li>
+<li><strong>Optimal value</strong> <span class="math inline">\(V^* = Q(a^*) = \max_a Q(a)\)</span></li>
+<li><strong>Regret</strong> is the opportunity loss for one step <span class="math inline">\(I_t = \mathbb E[V^* - Q(a_t)]\)</span>.</li>
+<li><strong>Cumulative regret</strong> <span class="math inline">\(L_t = \sum_{\tau \leq t} I_\tau\)</span>.</li>
+</ul>
+<p>Some auxiliary definitions:</p>
+<ul>
+<li>Average payoff <span class="math inline">\(\mu_a = \mathbb E_{\mathcal R^a}(r)\)</span>.</li>
+<li><strong>Gap</strong> <span class="math inline">\(\Delta_a = \mu_{a^*} - \mu_a&gt;0\)</span> for each sub-optimal arm.</li>
+<li><strong>Pull counts</strong> <span class="math inline">\(N_a(t)\)</span>. Under this definition, we have cumulative regret
+<span class="math display">\[
+  L_t = \sum_a \Delta_a \cdot \mathbb E\left[N_a(t)\right]
+\]</span></li>
+</ul>
+</div>
+</div>
+<div id="lrLB" class="section level2 unnumbered hasAnchor">
+<h2>Lai-Robins lower bound<a href="exploration.html#lrLB" class="anchor-section" aria-label="Anchor link to header"></a></h2>
+<div class="remark">
+<p><span id="lrLB" class="remark"><em>Remark</em> (proof strategy). </span>Proof for the following theorem is adapted from <a href="https://appliedprobability.blog/2020/11/25/lai-robbins-lower-bound/">appliedprobability.blog</a>. It is an exemplary proof from large deviations theory:</p>
+<ol style="list-style-type: decimal">
+<li>Fixing a suboptimal arm <span class="math inline">\(a\)</span> and bound sequence <span class="math inline">\(n_t\)</span>, we wish to prove <span class="math inline">\(P(N_a(t) \leq n_t) = o(1)\)</span></li>
+<li>Construct an alternate measure <span class="math inline">\(P&#39;\)</span> under which <span class="math inline">\(E_t=\{N_a(t) \leq n_t\}\)</span> is <span class="math inline">\(P\)</span>-likely yet <span class="math inline">\(P&#39;\)</span>-unlikely.</li>
+<li><span style="color:blue"><strong>Key reduction</strong>: let <span class="math inline">\(C_t\)</span> denote the event that <u>empirical KL is <span class="math inline">\(\epsilon\)</span>-close to true KL</u>, then
+<span class="math display">\[
+P(E_t) = P(E_t \cap \overline{C_t}) + P(E_t \cap C_t)
+\]</span>
+<ul>
+<li>The first term is <span class="math inline">\(o(1)\)</span> by WLLN.</li>
+<li>The second term can be converted to a <span class="math inline">\(P&#39;(E_t\cap C_t)\)</span> by Radon-Nikodym derivative, which is bounded by <span class="math inline">\(C_t\)</span> assumption.
+</span></li>
+</ul></li>
+</ol>
+</div>
+<div class="theorem">
+<p><span id="thm:regretLowerBound" class="theorem"><strong>Theorem 6.1  (Lai-Robbins lower bound) </strong></span>For any algorithm such that the number of suboptimal pulls is <span class="math inline">\(o(t^{\eta\in (0, 1)})\)</span>, we have a logarithmic lower bound on regret:
+<span class="math display">\[\begin{align}
+    L_t \geq (1-\eta) \log t \sum_{a\neq a^*} \dfrac{\Delta_a}{D(\mathcal R^a \| \mathcal R^{a^*})}
+\end{align}\]</span></p>
+</div>
+<p><em>Proof:</em> Fixing any suboptimal arm <span class="math inline">\(a\)</span>, construct a new bandit instance in which <span class="math inline">\(a\)</span> is optimal, i.e. <span class="math inline">\(\tilde {\mathcal R}^a\)</span> satisfies <span class="math inline">\(\mathbb E[\tilde {\mathcal R}^a] &gt; \mu_{a^*}\)</span>. Let the original measure be denoted <span class="math inline">\(P\)</span> and the new measure <span class="math inline">\(P&#39;\)</span>. Fix a bound sequence <span class="math inline">\(n_t\)</span>; elementary probability yields
+<span class="math display">\[\begin{align}
+    \mathbb E_P[N_a(t)]
+    &amp;\geq n_t \left(1 - P[N_a(t) \leq n_t]\right)
+\end{align}\]</span>
+We seek to choose <span class="math inline">\(n_t\)</span> such that <span class="math inline">\(P[N_a(t) \geq n_t]=o(1)\)</span>. Upper-bound this term by splitting it into two cases:</p>
+<ul>
+<li>The first case denotes the probability that the deviation between <span class="math inline">\(P\)</span> and <span class="math inline">\(P&#39;\)</span> is not close to that given by KL. goes to <span class="math inline">\(\delta_t = o(1)\)</span> by weak law of large numbers.</li>
+<li>The second case isolates a case where the deviation between <span class="math inline">\(P, P&#39;\)</span> is <span class="math inline">\(\epsilon\)</span>-close to that given by KL.</li>
+</ul>
+<p>Note that conditioning on actions, the bandit environment tensorizes; let <span class="math inline">\(D(r_k)=\log \dfrac{P&#39;(r_k)}{P(r_k)}\)</span> denote the random variable such that <span class="math inline">\(\mathbb E[e^D] = dP&#39;/dP\)</span> and <span class="math inline">\(\mathbb E[D] = D(P&#39;\|P)\)</span>, then
+<span class="math display">\[\begin{align}
+    P[N_a(t) \leq n_t]
+    &amp;= P\left[
+        N_a(t) \leq n_t \text{   and   }
+        \left|
+            D(P\|P&#39;) - \dfrac 1 {n_t} \sum_{k=1}^{n_t} D(r_k)
+        \right| &gt; \epsilon
+    \right] \\
+    &amp;\quad + P\left[
+        N_a(t) \leq n_t \text{   and   }
+        \left|
+            D(P\|P&#39;) - \dfrac 1 {n_t} \sum_{k=1}^{n_t} D(r_k)
+        \right| \leq \epsilon
+    \right] \\
+    &amp;\leq P\left[
+       \left|
+            D(P\|P&#39;) - \dfrac 1 {n_t} \sum_{k=1}^{n_t} D(r_k)
+        \right| &gt; \epsilon
+    \right] \\
+    &amp;\quad + \mathbb E_{P&#39;}\left[
+        \exp \left(
+            \sum_{k=1}^{n_t} D(r_k)
+        \right)_{\leq n_t [D(P\|P&#39;)+\epsilon]} P&#39; \left[
+        N_a(t) \leq n_t
+        \right]
+    \right] \\
+    &amp;\leq \delta_t + \exp \left(
+        n_t [D(P\|P&#39;) + \epsilon]
+    \right) P&#39;[N_a(t) \leq n_t]
+\end{align}\]</span></p>
+<p>It remains to bound <span class="math inline">\(P&#39;[N_a(t) \leq n_t]\)</span> by Markov’s inequality and choose <span class="math inline">\(n_t\)</span>: w.l.o.g suppose that the algorithm pulls the suboptimal arm at rate <span class="math inline">\(o(t^\eta)\)</span> for <span class="math inline">\(\eta\in (0, 1)\)</span>, we have
+<span class="math display">\[
+    P&#39;[N_a(t) \leq n_t] = P&#39;(t - N_a(t) \geq t - n_T)
+    \leq \dfrac{\mathbb E_{P&#39;}[t - N_a(t)]}{t-n_t} = o(t^{\eta - 1})
+\]</span>
+Substituting, we obtain the bound on
+<span class="math display">\[\begin{align}
+    P&#39;[N_a(t) \leq n_t]
+    &amp;\leq \delta_t + \exp \left(
+        n_t [D(P\|P&#39;) + \epsilon]
+    \right) o(t^{\eta - 1})
+\end{align}\]</span>
+The largest choice of <span class="math inline">\(n_t\)</span> which keeps the whole bound <span class="math inline">\(o(1)\)</span> is
+<span class="math display">\[
+    n_t = \dfrac{1-\eta}{D(P\|P&#39;) + \epsilon} \log t, \quad
+    \mathbb E_P[N_a(t)] \geq n_t (1 - o(1))
+\]</span>
+Take <span class="math inline">\(\epsilon\to 0\)</span>; also note that by chain rule, <span class="math inline">\(D(P\|P&#39;) = \mathbb E_P[N_a(t)] D(\mathcal R^a \|\tilde {\mathcal R}^a) \geq D(\mathcal R^a \|\tilde {\mathcal R}^a)\)</span>. Take <span class="math inline">\(\tilde {\mathcal R^a}\to \mathcal R^{a^*}\)</span> and substituting into the regret formula yields the desired bound.</p>
+</div>
+<div id="ucb" class="section level2 unnumbered hasAnchor">
+<h2>Upper confidence bound method<a href="exploration.html#ucb" class="anchor-section" aria-label="Anchor link to header"></a></h2>
+<p>The bandit setup highlights the tradeoff between exploration and exploitation. Note that <span class="math inline">\(\epsilon\)</span>-greedy methods for fixed <span class="math inline">\(\epsilon\)</span> can invoke linear regret:</p>
+<ul>
+<li>If <span class="math inline">\(\epsilon&gt;0\)</span>, regret <span class="math inline">\(\propto \epsilon/m \min_{a\neq a^*} \Delta_a\)</span></li>
+<li>If <span class="math inline">\(\epsilon=0\)</span>, we might be pulling a suboptimal arm greedily forever.</li>
+<li>In general, the decay schedule of <span class="math inline">\(\epsilon\)</span> is problem-dependent to achieve sublinear regret.</li>
+</ul>
+<div class="theorem">
+<p><span id="thm:hoeffding" class="theorem"><strong>Theorem 6.2  (Hoeffding's inequality) </strong></span>Given i.i.d. random variables <span class="math inline">\((X_j)\in [0, 1]\)</span> and let <span class="math inline">\(\bar X_n\)</span> be the sample mean, then
+<span class="math display">\[
+    P\left[\mathbb E[X] &gt; \bar X_n + u\right] \leq \exp(-2nu^2)
+\]</span>
+Rearrange and use symmetry to obtain a bound on the absolute value difference
+<span class="math display">\[
+    P\left[\left|\mathbb E[X] - \bar X_n\right| &gt; \sqrt{\dfrac{\log(2/\delta)}{2n}}\right] \leq \delta
+\]</span></p>
+</div>
+<div class="definition">
+<p><span id="def:ucb" class="definition"><strong>Definition 6.3  (UCB algorithm) </strong></span>Given a MAB (multi-arm bandit) with <span class="math inline">\(m\)</span> arms:</p>
+<ol style="list-style-type: decimal">
+<li>Sample once from each arm.</li>
+<li>Let <span class="math inline">\(N_a\)</span> denote the number of times arm <span class="math inline">\(a\)</span> has been pulled, and <span class="math inline">\(\hat Q(a)\)</span> be the sample mean reward of arm <span class="math inline">\(a\)</span>, choose
+<span class="math display">\[
+a_t = \operatorname*{arg\,max}_{a} \hat Q(a) + \sqrt{\dfrac{\log(2/\delta_t)}{2n_a}} \equiv \operatorname*{arg\,max}_{a} \mathrm{UCB}(a, t), \quad \delta_t = 1/t^2
+\]</span></li>
+</ol>
+</div>
+<div class="theorem">
+<p><span id="thm:ucbRegret" class="theorem"><strong>Theorem 6.3  (UCB regret bound) </strong></span>Using the UCB algorithm as in <a href="exploration.html#def:ucb">6.3</a>, the regret is
+<span class="math display">\[
+    L_t = \sum_{\Delta_a \neq 0} \Delta_a \mathbb E[n_a(t)] \leq \Omega\left(
+        \log t \sum_{\Delta_a\neq 0} \dfrac 1 {\Delta_a}
+    \right)
+\]</span></p>
+</div>
+<details>
+<summary>
+Assuming that bounds are satisfied, analyze relation between <span class="math inline">\(\delta_t, n_a, Q(a), \hat Q(a), Q(a^*)\)</span>
+</summary>
+<p>For a suboptimal arm <span class="math inline">\(a\)</span> to be pulled at time <span class="math inline">\(t\)</span>, we have <span class="math inline">\(\mathrm{UCB}(a, t) \geq \mathrm{UCB}(a^*, t)\)</span>. We next break the scenario into two cases:</p>
+<ol style="list-style-type: decimal">
+<li><strong>High-probability case</strong>: The bound for <span class="math inline">\(a\)</span> hold on both sides, and <span class="math inline">\(\mathrm{UCB}(a^*, t) \geq Q(a^*)\)</span>. Then
+<span class="math display">\[
+\hat Q(a) - \sqrt{\dfrac{\log(2/\delta_t)}{2n_a}} \leq Q(a) \leq \hat Q(a) + \sqrt{\dfrac{\log(2/\delta_t)}{2n_a }}
+\]</span>
+Additionally, the upper bound must exceed that of the optimal arm; optimal arm holds as well, we have
+<span class="math display">\[\begin{align}
+Q(a^*) \leq \mathrm{UCB}(a^*, t) \leq \hat Q(a) + \sqrt{\dfrac{\log(2/\delta_t)}{2n_a }}
+\leq Q(a) + 2 \sqrt{\dfrac{\log(2/\delta_t)}{2n_a }}
+\end{align}\]</span>
+Rearrange to yield
+<span class="math display">\[
+Q(a^*) - Q(a) = \Delta_a \leq 2 \sqrt{\dfrac{\log(2/\delta_t)}{2n_a }} \implies n_a \leq \dfrac{2}{\Delta_a^2} \log \dfrac{2}{\delta_t}
+\]</span></li>
+<li><strong>Low-probability case</strong>: bound for <span class="math inline">\(a\)</span> doesn’t hold when <span class="math inline">\(a\)</span> is chosen at time <span class="math inline">\(t\)</span>, or if <span class="math inline">\(\mathrm{UCB}(a^*, t) \leq Q(a^*)\)</span>; in this case there’re no guarantees on the number of times <span class="math inline">\(a\)</span> could have been pulled so the worst case is <span class="math inline">\(t\)</span>.
+<ul>
+<li>The probability that the bound for <span class="math inline">\(a\)</span> doesn’t hold when <span class="math inline">\(a\)</span> is chosen at time <span class="math inline">\(t\)</span> is just <span class="math inline">\(\delta_t\)</span>.</li>
+<li>For the second component, <span class="math inline">\(P(\mathrm{UCB}(a^*, t) \leq Q(a^*))\)</span> is upper bounded by the probability that the bound for <span class="math inline">\(a^*\)</span> doesn’t hold for any of time steps <span class="math inline">\(1, \dots, t\)</span>, which is <span class="math inline">\(\sum_{\tau=1}^t \delta_\tau\)</span>.</li>
+</ul></li>
+</ol>
+Combining the bounds and choose <span class="math inline">\(\delta_t = 1/t^2\)</span> so that <span class="math inline">\(\sum_{\tau=1}^t \delta_\tau = \Omega(1/t)\)</span>, we obtain
+<span class="math display">\[\begin{aligned}
+    \mathbb E[n_{a\neq a^*}]
+    &amp;\leq \mathbb E\left[n_{a\neq a^*} \mid \text{high-prob case}\right] + n P(\text{low-prob case})  \\
+    &amp;\leq \dfrac{2}{\Delta_a^2} \log \dfrac{2}{\delta_t} + n\left(
+        \delta_t + \sum_{\tau=1}^t \delta_\tau
+    \right) \\
+    &amp;\leq \dfrac{2}{\Delta_a^2} \log \dfrac{2}{\delta_t} + t^{-1} + t\,  \Omega(t^{-1}) = \Omega \left(\dfrac{\log t}{\Delta_a^2}\right)
+\end{aligned}\]</span>
+</details>
+<div class="remark">
+<p><span id="unlabeled-div-19" class="remark"><em>Remark</em> (LCB algorithm). </span>Note that an algorithm which selects the action with greatest lower confidence bound is inherently greedy. When <span class="math inline">\(Q(a^*)&gt;Q(a)&gt;\mathrm{UCB}(a)&gt;\mathrm{UCB}(a^*)\)</span>, the algorithm never explores <span class="math inline">\(a^*\)</span>.</p>
+</div>
+</div>
+<div id="bayesianBandit" class="section level2 unnumbered hasAnchor">
+<h2>Bayesian bandit<a href="exploration.html#bayesianBandit" class="anchor-section" aria-label="Anchor link to header"></a></h2>
+<p>While frequentist inference assumes that there is a fixed distribution parameter, Bayesian inference assumes that there is a prior over parameters. Regret is computed similarly as</p>
+<p><span class="math display">\[
+    L^{\mathrm{Bayes}}_t = %
+  \mathop{\mathbb{E}}\limits_{\substack{\theta\sim p_\theta \\ a_t\sim \tau}} \left[
+        \sum_{\tau=1}^t Q(a^*) - Q(a_t)
+        \bigg| \theta
+    \right]
+\]</span></p>
+<div class="definition">
+<p><span id="def:probMatching" class="definition"><strong>Definition 6.4  (probability matching) </strong></span>In a Bayes setting, a probability matching algorithm selects action <span class="math inline">\(a\)</span> according to the probability that <span class="math inline">\(a\)</span> is the optimal action, given the current history
+<span class="math display">\[
+    \pi(a\mid h_t) = P\left[
+        Q(a) &gt; Q(a&#39;\neq a) \mid h_t
+    \right]
+\]</span></p>
+<ol style="list-style-type: decimal">
+<li>Note that <span class="math inline">\(Q(a), Q(a&#39;)\)</span> here are inherently scalars.</li>
+<li>The probability is taken over distribution of reward distribution parameters <span class="math inline">\(\{\theta_a\}\)</span>, conditioned upon history <span class="math inline">\(h_t\)</span>.</li>
+</ol>
+</div>
+<div class="definition">
+<p><span id="def:thompsonSamp" class="definition"><strong>Definition 6.5  (Thompson sampling) </strong></span>Given priors <span class="math inline">\(p(\mathcal R_a)\)</span>, for each iteration repeat:</p>
+<ol style="list-style-type: decimal">
+<li>For each arm, sample a reward <strong>distribution parameter</strong> from the parameter posterior <span class="math inline">\(\hat \theta_a \sim \left(p(\mathcal R_a)\mid h_t\right)\)</span>.</li>
+<li>Compute the sampled distribution’s mean <span class="math inline">\(Q(a) = \mathbb E_{\theta_a} \mathcal R_a(\theta_a)\)</span>.</li>
+<li>Select <span class="math inline">\(a = \operatorname*{arg\,max}_{a} Q(a)\)</span> and observe reward.</li>
+<li>Update posterior for arm <span class="math inline">\(a\)</span>.</li>
+</ol>
+</div>
+<p>Note that probability matching is inherently optimistic in case of uncertainty. Also note that we sample a reward distribution parameter and analytically compute the mean reward, given that parameter.</p>
+</div>
+<div id="mdpExploration" class="section level2 unnumbered hasAnchor">
+<h2>Exploration in MDPs<a href="exploration.html#mdpExploration" class="anchor-section" aria-label="Anchor link to header"></a></h2>
+<div class="definition">
+<p><span id="def:unlabeled-div-20" class="definition"><strong>Definition 6.6  (PAC control) </strong></span>Given a MDP, a control algorithm is probably approximately correct (PAC) if on each step, the chosen action <span class="math inline">\(a\)</span>:</p>
+<ul>
+<li>is <span class="math inline">\(\epsilon\)</span>-optimal: <span class="math inline">\(Q(s, a)\geq Q(s, a^*) - \epsilon\)</span>.</li>
+<li>with probability at least <span class="math inline">\(1-\delta\)</span></li>
+</ul>
+<p>on all but <span class="math inline">\(\mathrm{poly}(\mathcal|A|, \epsilon, \delta, \dots)\)</span> number of steps.</p>
+</div>
+
+</div>
+</div>
+            </section>
+
+          </div>
+        </div>
+      </div>
+<a href="rlLLMs.html" class="navigation navigation-prev " aria-label="Previous page"><i class="fa fa-angle-left"></i></a>
+<a href="bibliography.html" class="navigation navigation-next " aria-label="Next page"><i class="fa fa-angle-right"></i></a>
+    </div>
+  </div>
+<script src="libs/gitbook-2.6.7/js/app.min.js"></script>
+<script src="libs/gitbook-2.6.7/js/clipboard.min.js"></script>
+<script src="libs/gitbook-2.6.7/js/plugin-search.js"></script>
+<script src="libs/gitbook-2.6.7/js/plugin-sharing.js"></script>
+<script src="libs/gitbook-2.6.7/js/plugin-fontsettings.js"></script>
+<script src="libs/gitbook-2.6.7/js/plugin-bookdown.js"></script>
+<script src="libs/gitbook-2.6.7/js/jquery.highlight.js"></script>
+<script src="libs/gitbook-2.6.7/js/plugin-clipboard.js"></script>
+<script>
+gitbook.require(["gitbook"], function(gitbook) {
+gitbook.start({
+"sharing": {
+"github": false,
+"facebook": true,
+"twitter": true,
+"linkedin": false,
+"weibo": false,
+"instapaper": false,
+"vk": false,
+"whatsapp": false,
+"all": ["facebook", "twitter", "linkedin", "weibo", "instapaper"]
+},
+"fontsettings": {
+"theme": "white",
+"family": "sans",
+"size": 2
+},
+"edit": {
+"link": null,
+"text": null
+},
+"history": {
+"link": null,
+"text": null
+},
+"view": {
+"link": null,
+"text": null
+},
+"download": null,
+"search": {
+"engine": "fuse",
+"options": null
+},
+"toc": {
+"collapse": "subsection"
+}
+});
+});
+</script>
+
+<!-- dynamically load mathjax for compatibility with self-contained -->
+<script>
+  (function () {
+    var script = document.createElement("script");
+    script.type = "text/javascript";
+    var src = "true";
+    if (src === "" || src === "true") src = "https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.9/latest.js?config=TeX-MML-AM_CHTML";
+    if (location.protocol !== "file:")
+      if (/^https?:/.test(src))
+        src = src.replace(/^https?:/, '');
+    script.src = src;
+    document.getElementsByTagName("head")[0].appendChild(script);
+  })();
+</script>
+</body>
+
+</html>
