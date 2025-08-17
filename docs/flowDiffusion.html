@@ -23,7 +23,7 @@
 <meta name="author" content="Nicholas Lyu" />
 
 
-<meta name="date" content="2025-08-15" />
+<meta name="date" content="2025-08-17" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
@@ -98,12 +98,10 @@ div.csl-indent {
 <li class="chapter" data-level="1" data-path="flowDiffusion.html"><a href="flowDiffusion.html"><i class="fa fa-check"></i><b>1</b> Flow Matching and Diffusion</a>
 <ul>
 <li class="chapter" data-level="" data-path="flowDiffusion.html"><a href="flowDiffusion.html#prelim"><i class="fa fa-check"></i>Modeling</a></li>
-<li class="chapter" data-level="" data-path="flowDiffusion.html"><a href="flowDiffusion.html#trainProcedure"><i class="fa fa-check"></i>Training procedure</a>
-<ul>
-<li class="chapter" data-level="" data-path="flowDiffusion.html"><a href="flowDiffusion.html#conditional-to-marginal"><i class="fa fa-check"></i>Conditional to marginal</a></li>
-<li class="chapter" data-level="" data-path="flowDiffusion.html"><a href="flowDiffusion.html#flow-matching"><i class="fa fa-check"></i>Flow matching</a></li>
-<li class="chapter" data-level="" data-path="flowDiffusion.html"><a href="flowDiffusion.html#gaussian-example"><i class="fa fa-check"></i>Gaussian example</a></li>
-</ul></li>
+<li class="chapter" data-level="" data-path="flowDiffusion.html"><a href="flowDiffusion.html#vecFieldsAndDistributions"><i class="fa fa-check"></i>Vector fields and distributions</a></li>
+<li class="chapter" data-level="" data-path="flowDiffusion.html"><a href="flowDiffusion.html#marginalization"><i class="fa fa-check"></i>Marginalization</a></li>
+<li class="chapter" data-level="" data-path="flowDiffusion.html"><a href="flowDiffusion.html#optimization"><i class="fa fa-check"></i>Optimization</a></li>
+<li class="chapter" data-level="" data-path="flowDiffusion.html"><a href="flowDiffusion.html#gaussian"><i class="fa fa-check"></i>Gaussian example</a></li>
 </ul></li>
 <li class="chapter" data-level="" data-path="bibliography.html"><a href="bibliography.html"><i class="fa fa-check"></i>Bibliography</a></li>
 </ul>
@@ -133,10 +131,17 @@ div.csl-indent {
 <li>Given the probabaility velocity vector field <span class="math inline">\(u_t\)</span> and <span class="math inline">\(p_{\mathrm{init}}\)</span>, we can directly compute <span class="math inline">\(\partial_{t} p_t\)</span> via the Fokker-Planck equation.
 Conversely, given <span class="math inline">\(p_t\)</span>, we can always construct (non-unique) vector field which matches the probability path.</li>
 </ul></li>
-<li>Conditioning on a single data point <span class="math inline">\(z\)</span> with dirac delta target distribution <span class="math inline">\(\delta_z\)</span>, the conditional vector field has simple, closed form. Apply the marginalization trick <a href="flowDiffusion.html#thm:margTrick">1.3</a> to generalize to whole empirical data distribution.
+<li>Conditioning on a single data point <span class="math inline">\(z\)</span> with dirac delta target <span class="math inline">\(\delta_z\)</span>, the conditional vector field has simple analytic solution. Apply the marginalization trick <a href="flowDiffusion.html#thm:margTrick">1.3</a> to generalize to whole empirical data distribution.
 <ul>
 <li><u>Very important remark</u>: fixing <span class="math inline">\(p_{\mathrm{init}}\)</span>, the mapping <span class="math inline">\(u_t\mapsto p_t\)</span> <strong>is not linear</strong>. The vector field <span class="math inline">\(u_t\)</span> specifies the <strong>probability velocity</strong>, while mixture linearly superimposes the <strong>probability flux</strong> <span class="math inline">\(u_tp_t\)</span>.</li>
 </ul></li>
+<li>The marginal vector field <a href="flowDiffusion.html#thm:margTrick">1.3</a> and score generally have intractable integrals, but crucially, optimizing MSE to the conditional v. marginal distribution have the same desired behavior (theorem <a href="flowDiffusion.html#thm:opEq">1.4</a>).</li>
+<li><span style="blue"> Crux of using deep modeling </span>: having solved the simple conditional case analytically, we’re relying on the model to:
+<ul>
+<li>Model marginal quantities by optimization equivalence, without resorting to intractable integrals <strong>(very smart theme!!)</strong></li>
+<li>Generalize / interpolate the vector field to assign mass to unseen regions of the data manifold.</li>
+</ul></li>
+<li>Under the <a href="@gaussian">Gaussian probability path</a>, the network essentially learns to predict the noise which is used to corrupt data; conversion between score vs target network targets <a href="flowDiffusion.html#prp:gaussianFormulae">1.3</a>.</li>
 </ol>
 <div id="prelim" class="section level2 unnumbered hasAnchor">
 <h2>Modeling<a href="flowDiffusion.html#prelim" class="anchor-section" aria-label="Anchor link to header"></a></h2>
@@ -166,8 +171,8 @@ where <span class="math inline">\(W_t\)</span> is the standard Brownian motion. 
 <li>Compute <span class="math inline">\(x_1 = \Phi_1(x_0=\epsilon) = \exp \left[  \int_0^1 u_\tau \, d\tau + \int_0^1 \sigma^t_\tau \, dW_\tau  \right] \epsilon\)</span> using SDE approximation methods.</li>
 </ol>
 </div>
-<div id="trainProcedure" class="section level2 unnumbered hasAnchor">
-<h2>Training procedure<a href="flowDiffusion.html#trainProcedure" class="anchor-section" aria-label="Anchor link to header"></a></h2>
+<div id="vecFieldsAndDistributions" class="section level2 unnumbered hasAnchor">
+<h2>Vector fields and distributions<a href="flowDiffusion.html#vecFieldsAndDistributions" class="anchor-section" aria-label="Anchor link to header"></a></h2>
 <p>The next order of business is to train <span class="math inline">\(\theta\)</span> so that <span class="math inline">\(x_1=\Phi_1(p_{\mathrm{init}})\approx p_{\mathrm{data}}\)</span>. The main idea is to integrate tractable conditional solutions to obtain the full, marginalized solution.
 Given a (continuous) probability path <span class="math inline">\(p_{(\cdot)}(\cdot): \mathbb R\to \Delta(\mathbb R^d)\)</span>, we can relate it to a vector field <span class="math inline">\(u_{(\cdot)}:\mathbb R\times \mathbb R^d\to \mathbb R^d\)</span> which realizes it as follows:</p>
 <div class="theorem">
@@ -279,8 +284,9 @@ This shows that <span class="math inline">\(\partial_{t} p_t=\dots\)</span> almo
 \]</span>
 has stationary distribution <span class="math inline">\(p_{\mathrm{init}}\)</span>. This is called <strong>Langevin dynamics</strong>. In fact, under mild regularity conditions this SDE pulls any initial law <span class="math inline">\(p&#39;\)</span> to the fixed point.</p>
 </div>
-<div id="conditional-to-marginal" class="section level3 unnumbered hasAnchor">
-<h3>Conditional to marginal<a href="flowDiffusion.html#conditional-to-marginal" class="anchor-section" aria-label="Anchor link to header"></a></h3>
+</div>
+<div id="marginalization" class="section level2 unnumbered hasAnchor">
+<h2>Marginalization<a href="flowDiffusion.html#marginalization" class="anchor-section" aria-label="Anchor link to header"></a></h2>
 <p>The following theorem is the main tool for converting conditional models into marginal ones.</p>
 <div class="theorem">
 <p><span id="thm:margTrick" class="theorem"><strong>Theorem 1.3  (marginalization trick) </strong></span>Fixing <span class="math inline">\(p_{\mathrm{data}}\)</span> and conditional probability paths <span class="math inline">\(p_t(\cdot\mid z)\)</span> interpolating between <span class="math inline">\(p_{\mathrm{init}}\)</span> and <span class="math inline">\(\delta_z\)</span> (e.g. definition <a href="flowDiffusion.html#def:condGaussianPath">1.1</a>). For each <span class="math inline">\(z\in \mathbb R^d\)</span> let <span class="math inline">\(u^*_t(\cdot\mid z):\mathbb R^d\to \mathbb R^d\)</span> denote a vector field which realizes the conditional probability path, i.e. 
@@ -333,43 +339,135 @@ Zeroth-order intuition seems to suggest that “since everything is linear”, l
 \end{aligned}\]</span>
 Importantly, we don’t obtain the clean refactoring of <span class="math inline">\(p_{\mathrm{data}}(z)\)</span>. The main reason why linear superposition is not correct is because the operator <span class="math inline">\(u_t\mapsto \partial_{t} p_t = -\nabla \cdot (u_tp_t)\)</span> which maps <span class="math inline">\(u_t\)</span> to the distribution it effects <strong>has additional dependence upon <span class="math inline">\(p_t\)</span></strong>, which <strong>depends nontrivially upon <span class="math inline">\(x\)</span></strong>. Switching from conditional to marginal, we have <span class="math inline">\(p_t(x \mid z)\mapsto p_t(x)=\int p_t(x\mid z)p_{\mathrm{data}}(z)\, dz\)</span>; this introduces nontrivial <span class="math inline">\(x\)</span>-dependence inside the divergence operator.
 </details>
+<p><span style="color:green">
+Alternative explanation:
+</span> the marginal velocity at a point is the average over all conditional velocities, so <span class="math inline">\(u_t(x) = \mathbb{E}_{z}[u_t(x\mid z) \mid X=x]\)</span>. It’s critical to recognize here that the ensembling and conditioning is done w.r.t. the joint <span class="math inline">\(p_t(x, z)\)</span>.</p>
 <div class="proposition">
 <p><span id="prp:unlabeled-div-2" class="proposition"><strong>Proposition 1.1  (marginalization of score function) </strong></span>Given a distribution <span class="math inline">\(p\)</span>, define its score function <span class="math inline">\(\nabla \log p(x)\)</span>. The marginal score is connected to conditional score by
 <span class="math display">\[
-    \nabla \log p_t(x_t) = \int p_t(z\mid x_t) \nabla \log p_t(x_t\mid z)\, dz, \quad p_t(z\mid x_t) = \dfrac{p_t(x\mid z)p_{\mathrm{init}}(z)}{p_t(x)}
+    \nabla \log p_t(x_t) = \int p_t(z\mid x_t) \nabla \log p_t(x_t\mid z)\, dz, \quad p_t(z\mid x_t) = \dfrac{p_t(x\mid z)p_{\mathrm{data}}(z)}{p_t(x)}
 \]</span></p>
 </div>
 </div>
-<div id="flow-matching" class="section level3 unnumbered hasAnchor">
-<h3>Flow matching<a href="flowDiffusion.html#flow-matching" class="anchor-section" aria-label="Anchor link to header"></a></h3>
+<div id="optimization" class="section level2 unnumbered hasAnchor">
+<h2>Optimization<a href="flowDiffusion.html#optimization" class="anchor-section" aria-label="Anchor link to header"></a></h2>
+Fixing <span class="math inline">\(p_{\mathrm{data}}\)</span> and <span class="math inline">\(p_t^\mathrm{target}\)</span>, we can mathematically formulate <span class="math inline">\(u_t^\mathrm{target}\)</span> using the continuity equation and marginalization trick. We parameterize <span class="math inline">\(u_t^\theta\)</span> in hopes of approximating <span class="math inline">\(u_t^\mathrm{target}\)</span>. This can be done by minimizing the (marginal) <strong>flow matching loss</strong>
+<span class="math display">\[
+    \mathcal L_\mathrm{FM}(\theta) = \mathbb{E}_{t\sim \mathrm{Unif}, z\sim p_{\mathrm{data}}, x\sim p_t(\cdot\mid z)} \left\|u_t^\theta(x) - u_t^\mathrm{target}(x)\right\|^2
+\]</span>
+The only problem being that <span class="math inline">\(u_t^\mathrm{target}\)</span> is an intractable integral (sum for discrete datasets). A much more tractable quantity is the <strong>conditional flow matching loss</strong> which, upon drawing <span class="math inline">\(z\sim p_{\mathrm{data}}\)</span>, only asks the model to regress the conditional vector field for that <span class="math inline">\(z\)</span>:
+<span class="math display">\[
+    \mathcal L_\mathrm{CFM}(\theta) = \mathbb{E}_{t\sim \mathrm{Unif}, z\sim p_{\mathrm{data}}, x\sim p_t(\cdot\mid z)} \left\|u_t^\theta(x) - u_t^\mathrm{target}(x\mid z)\right\|^2
+\]</span>
+Similarly define the <strong>score matching</strong> and <strong>conditional score matching</strong> losses:
+<span class="math display">\[\begin{aligned}
+    \mathcal L_{\mathrm{SM}}(\theta) &amp;= \mathbb{E}_{t\sim \mathrm{Unif}, x\sim p_t} \left\|\nabla \log p_t^\theta(x) - \nabla \log p_t^{\mathrm{target}}(x)\right\|^2 \\
+    \mathcal L_{\mathrm{CSM}}(\theta) &amp;= \mathbb{E}_{t\sim \mathrm{Unif}, z\sim p_{\mathrm{data}}, x\sim p_t(\cdot\mid z)} \left\|\nabla \log p_t^\theta(x) - \nabla \log p_t^{\mathrm{target}}(x\mid z)\right\|^2
+\end{aligned}\]</span>
+<div class="theorem">
+<p><span id="thm:opEq" class="theorem"><strong>Theorem 1.4  (optimization equivalence) </strong></span><span class="math inline">\(\nabla_\theta \mathcal L_\mathrm{FM}(\theta) = \nabla_\theta \mathcal L_\mathrm{CFM}(\theta)\)</span>. Similarly, <span class="math inline">\(\nabla_\theta \mathcal L_\mathrm{SM}(\theta) = \nabla_\theta \mathcal L_\mathrm{CSM}(\theta)\)</span>.</p>
 </div>
-<div id="gaussian-example" class="section level3 unnumbered hasAnchor">
-<h3>Gaussian example<a href="flowDiffusion.html#gaussian-example" class="anchor-section" aria-label="Anchor link to header"></a></h3>
-<p>The next order of business is to work out a concrete example. We begin by specifying a trivial conditional probability path:</p>
+<details>
+<summary>
+Direct substitution
+</summary>
+Expanding the squared norm for both losses, it suffices to show that
+<span class="math display">\[
+    \mathbb{E}[u_t^\theta(x)^T u_t^\mathrm{target}(x)]
+    = \mathbb{E}[u_t^\theta(x)^T u_t^\mathrm{target}(x\mid z)]
+\]</span>
+Expand integrals and apply the marginalization equation <a href="flowDiffusion.html#thm:margTrick">1.3</a>:
+<span class="math display">\[\begin{aligned}
+    \mathbb{E}_{t, x\sim p_t}[u_t^\theta(x)^T u_t^\mathrm{target}(x)]
+    &amp;= \iint p_t(x) u_t^\theta(x)^T \left[u_t^\mathrm{target}(x)\right] \, dx \, dt  \\
+    &amp;= \iint p_t(x) u_t^\theta(x)^T \int u_t^*(x\mid z) p_t(z\mid x)\, dz \, dx \, dt \\
+    &amp;= \iiint u_t^\theta(x)^T u_t^*(x\mid z) p_t(x, z)\, dz\, dx\, dt \\
+    &amp;= \mathbb{E}_{t, z\sim p_{\mathrm{data}}, x\sim p_t(\cdot\mid z)} [u_t^\theta(x)^T u_t^*(x\mid z)]
+\end{aligned}\]</span>
+</details>
+</div>
+<div id="gaussian" class="section level2 unnumbered hasAnchor">
+<h2>Gaussian example<a href="flowDiffusion.html#gaussian" class="anchor-section" aria-label="Anchor link to header"></a></h2>
+<p>The next order of business is to work out a concrete example; this is almost the only example we’ll ever need to work out. We begin by specifying an almost trivial conditional probability path:</p>
 <div class="definition">
 <p><span id="def:condGaussianPath" class="definition"><strong>Definition 1.1  (conditional Gaussian probability path) </strong></span>Consider a single point <span class="math inline">\(z\in \mathbb R^d\)</span>, the following <strong>Gaussian probability path</strong> continuously collapses <span class="math inline">\(p_{\mathrm{init}}\)</span> to <span class="math inline">\(\delta_z\)</span>:
 <span class="math display">\[
-    p_t(\cdot\mid z) = \mathcal N(\alpha_t z, \beta_t^2 I_d)
+    p_t^\mathrm{target}(x\mid z) = \mathcal N(x; \alpha_t z, \beta_t^2 I_d)
+    = \dfrac 1 {(2\pi \beta_t^2)^{d/2}} \exp \left(-\dfrac{\|x-\alpha_t z\|^2}{2\beta_t^2}\right)
 \]</span>
-where <span class="math inline">\(\alpha_t, \beta_t\)</span> are <strong>noise schedulers</strong> satisfying <span class="math inline">\(\alpha_0=\beta_1=0\)</span> and <span class="math inline">\(\alpha_1=\beta_0=1\)</span>.</p>
-</div>
-<p>Next, solve for the conditional vector field.</p>
-<div class="proposition">
-<p><span id="prp:unlabeled-div-3" class="proposition"><strong>Proposition 1.2  (Gaussian conditional vector field) </strong></span>Given <span class="math inline">\(\alpha_t, \beta_t\)</span>, the following vector field realizes the conditional Gaussian probability path:
+where <span class="math inline">\(\alpha_t, \beta_t\)</span> are <strong>noise schedulers</strong> satisfying <span class="math inline">\(\alpha_0=\beta_1=0\)</span> and <span class="math inline">\(\alpha_1=\beta_0=1\)</span>. Note that <span class="math inline">\(x, z\in \mathbb R^d\)</span>. Fixing <span class="math inline">\(z\)</span>, note that <span class="math inline">\(p_t\)</span> is the pushforward measure of <span class="math inline">\(p_{\mathrm{init}}\)</span> under the flow
 <span class="math display">\[
-    u_t(x\mid z) = \left(\dot \alpha_t - \dfrac{\dot \beta_t}{\beta_t} \alpha_t\right) z + \dfrac{\dot \beta_t}{\beta_t} x
+    \psi_t^\mathrm{target}(x\mid z) = \alpha_t z + \beta_t x
+\]</span></p>
+</div>
+<div class="proposition">
+<p><span id="prp:gaussianCVFS" class="proposition"><strong>Proposition 1.2  (Gaussian conditional vector field and score) </strong></span>Given <span class="math inline">\(\alpha_t, \beta_t\)</span>, the following vector field realizes the conditional Gaussian probability path:
+<span class="math display">\[
+    u_t^\mathrm{target}(x\mid z) = \left(\dot \alpha_t - \dfrac{\dot \beta_t}{\beta_t} \alpha_t\right) z + \dfrac{\dot \beta_t}{\beta_t} x
 \]</span>
 For the special linear-scheduler case <span class="math inline">\(\alpha_t=t, \beta_t=1-t\)</span>, we obtain
 <span class="math display">\[
     u_t(x\mid z) = \left(1 + \dfrac{t}{1-t}\right) z - \dfrac{1}{1-t} x = \dfrac{z-x} {1-t}
-\]</span></p>
-</div>
-<p>The score function is easily shown to be
+\]</span>
+The score function is
 <span class="math display">\[
-    \nabla \log p_t(x\mid z) = -\dfrac{x - \alpha_t z}{\beta_t^2}
+    \nabla \log p_t^\mathrm{target}(x\mid z) = -\dfrac{x - \alpha_t z}{\beta_t^2}
 \]</span></p>
-
 </div>
+<details>
+<summary>
+<span style="color:blue">IMPORTANT proof: instead of directly verifying the continuity equation, given <span class="math inline">\(p_t\)</span> construct vector field by (1) constructing a flow <span class="math inline">\(\psi_t(x_0)\)</span> whose pushforward measure of <span class="math inline">\(p_0\)</span> is <span class="math inline">\(p_t\)</span>, and (2) finding <span class="math inline">\(u_t\)</span> such that <span class="math inline">\(\partial_{t} \psi_t(x_0) = u_t(\psi_t(x_0))\)</span></span>
+</summary>
+Drop the <span class="math inline">\(\mathrm{target}\)</span> superscript to reduce clutter. Instead of doing the hairy calculation for <span class="math inline">\(\partial_{t} p_t\)</span>, we recall that <span class="math inline">\(p_t\)</span> is the pushforward of <span class="math inline">\(p_0=\mathcal N(0, I_d)\)</span> under <span class="math inline">\(\psi_t\)</span>, so it suffices to show that
+<span class="math display">\[
+    \partial_{t} \psi_t(x\mid z) = u_t(\psi_t(x\mid z)\mid z)
+\]</span>
+Unpacking this a bit more: fixing <span class="math inline">\(z\)</span> throughout, the map <span class="math inline">\(x\mapsto \psi_t(x\mid z)\)</span> sends initial <span class="math inline">\(x\sim p_{\mathrm{init}}\)</span> to where it would be at time <span class="math inline">\(t\)</span> such that <span class="math inline">\(x_t=\psi_t(x_0\mid z)\sim p_t\)</span> for all <span class="math inline">\(t\)</span>. Also recall that given flow <span class="math inline">\(x_0\mapsto \Phi_t(x_0)\)</span>, the vector field generator of the flow <span class="math inline">\(u_t\)</span> satisfies
+<span class="math display">\[
+    \partial_{t} \Phi_t(x_0) = \psi_t(x_t) = \psi_t(\Phi_t(x_0))
+\]</span>
+Returning to our original equation, we have
+<span class="math display">\[\begin{aligned}
+    u_t(\psi_t(x\mid z)\mid z)
+        &amp;= \left(
+            \dot \alpha_t - \dfrac{\dot \beta_t}{\beta_t} \alpha_t
+        \right) z + \dfrac{\dot \beta_t}{\beta_t} (\alpha_t z + \beta_t x) \\
+        &amp;= \dot \alpha_t z + \dot \beta_t x = \partial_{t} \psi_t
+\end{aligned}\]</span>
+</details>
+<ul>
+<li>Again, there are many vector fields which can realize the Gaussian conditional probability path. This gauge freedom is embedded in our choice of <span class="math inline">\(\psi_t\)</span>: there are many flow maps which realize the same specified pushforward measure.</li>
+</ul>
+<div class="proposition">
+<p><span id="prp:gaussianFormulae" class="proposition"><strong>Proposition 1.3  (flow and score matching for Gaussian paths) </strong></span></p>
+Applying <a href="flowDiffusion.html#prp:gaussianCVFS">1.2</a>, we obtain the losses which make training protocol self-evident:
+<span class="math display">\[\begin{aligned}
+    \mathcal L_\mathrm{CFM}(\theta)
+    &amp;= \mathbb{E}_{t\sim \mathrm{Unif}, z\sim p_{\mathrm{data}}, x\sim \mathcal N(\alpha_tz, \beta_t^2I_d)} \left\|
+        u_t^\theta(x) - \left(\dot \alpha(t) - \dfrac{\dot \beta_t}{\beta_t} \alpha_t \right)z
+        - \dfrac{\dot \beta_t}{\beta_t} x
+    \right\|^2 \\
+    &amp;= \mathbb{E}_{t\sim \mathrm{Unif}, z\sim p_{\mathrm{data}}, \epsilon \sim \mathcal N(0, I_d)} \left\|
+        u_t^\theta(\alpha_t z + \beta_t \epsilon) + (\dot \alpha_t z + \dot \beta_t \epsilon)
+    \right\|
+\end{aligned}\]</span>
+For simple linear interpolation, this instantiates to <span class="math inline">\(\mathcal L_\mathrm{CFM}(\theta) = \mathbb{E}\|u_t^\theta(tz + \bar t\epsilon) - (z-\epsilon)^2\|^2\)</span>. In terms of score, we obtain
+<span class="math display">\[\begin{aligned}
+    \mathcal L_\mathrm{CSM}(\theta)
+    &amp;= \mathbb{E}_{t\sim \mathrm{Unif}, z\sim p_{\mathrm{data}}, x\sim p_t(\cdot\mid z)} \left\|
+        s_t^\theta(x) + \dfrac{x - \alpha_tz}{\beta_t^2}
+    \right\| \\
+    &amp;= \mathbb{E}_{t\sim \mathrm{Unif}, z\sim p_{\mathrm{data}}, \epsilon \sim \mathcal N(0, I_d)} \left\|
+       s_t^\theta(\alpha_t z + \beta_t\epsilon) + \dfrac{\epsilon}{\beta_t}
+    \right\|^2
+\end{aligned}\]</span>
+<p>The score network essentially tries to learn the noise <span class="math inline">\(\epsilon\)</span> which used to corrupt data. To avoid <span class="math inline">\(\beta\to 0\)</span> instability, Denoising Diffusion Probabilistic Models (DDPM) proposed to drop <span class="math inline">\(1/\beta\)</span> coefficient and predict <span class="math inline">\(\epsilon_t^\theta\)</span>. Some algebra further shows that predicting the score is equivalent to predicting the target vector field:
+<span class="math display">\[
+    u_t^\mathrm{target}(x\mid z) = \left(\beta_t^2 \dfrac{\dot \alpha_t}{\alpha_t} - \dot \beta_t \beta_t\right) \nabla \log p_t(x\mid z) + \dfrac{\dot \alpha_t}{\alpha_t} x
+\]</span>
+Since both quantities share marginalization formula, the same equivalence holds for marginal targets.</p>
+</div>
+
 </div>
 </div>
 <h3>Bibliography<a href="bibliography.html#bibliography" class="anchor-section" aria-label="Anchor link to header"></a></h3>

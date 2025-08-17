@@ -41,6 +41,12 @@ link-citations: true
 \newcommand{\poly}{\mrm{poly}}
 \newcommand{\Pdata}{p_{\mrm{data}}}
 \newcommand{\Pinit}{p_{\mrm{init}}}
+\newcommand{\Target}{\mrm{target}}
+\newcommand{\Unif}{\mrm{Unif}}
+\newcommand{\FM}{\mrm{FM}}
+\newcommand{\CFM}{\mrm{CFM}}
+\newcommand{\SM}{\mrm{SM}}
+\newcommand{\CSM}{\mrm{CSM}}
 
 
 

@@ -6,8 +6,13 @@ This section explores flow matching and diffusion models based on the [MIT lectu
 2. Crucial bridge between vector field and probability path: continuity equation \@ref(thm:contEq)  resp. \@ref(thm:fokkerPlanck) Fokker-Planck in SDE case. 
     - Given the probabaility velocity vector field $u_t$ and $\Pinit$, we can directly compute $\pd t p_t$ via the Fokker-Planck equation. 
     Conversely, given $p_t$, we can always construct (non-unique) vector field which matches the probability path. 
-3. Conditioning on a single data point $z$ with dirac delta target distribution $\delta_z$, the conditional vector field has simple, closed form. Apply the marginalization trick \@ref(thm:margTrick) to generalize to whole empirical data distribution. 
-    - <u>Very important remark</u>: fixing $\Pinit$, the mapping $u_t\mapsto p_t$ **is not linear**. The vector field $u_t$ specifies the **probability velocity**, while mixture linearly superimposes the **probability flux** $u_tp_t$. 
+3. Conditioning on a single data point $z$ with dirac delta target $\delta_z$, the conditional vector field has simple analytic solution. Apply the marginalization trick \@ref(thm:margTrick) to generalize to whole empirical data distribution. 
+    - <u>Very important remark</u>: fixing $\Pinit$, the mapping $u_t\mapsto p_t$ **is not linear**. The vector field $u_t$ specifies the **probability velocity**, while mixture linearly superimposes the **probability flux** $u_tp_t$.
+4. The marginal vector field \@ref(thm:margTrick) and score generally have intractable integrals, but crucially, optimizing MSE to the conditional v. marginal distribution have the same desired behavior (theorem \@ref(thm:opEq)). 
+5. <span style="blue"> Crux of using deep modeling </span>: having solved the simple conditional case analytically, we're relying on the model to: 
+    - Model marginal quantities by optimization equivalence, without resorting to intractable integrals **(very smart theme!!)**
+    - Generalize / interpolate the vector field to assign mass to unseen regions of the data manifold. 
+6. Under the [Gaussian probability path](@gaussian), the network essentially learns to predict the noise which is used to corrupt data; conversion between score vs target network targets \@ref(prp:gaussianFormulae). 
 
 ## Modeling {#prelim -}
 
@@ -37,7 +42,7 @@ where $W_t$ is the standard Brownian motion. This concludes our specification of
        \int_0^1 u_\tau \, d\tau + \int_0^1 \sigma^t_\tau \, dW_\tau 
     \right] \epsilon$ using SDE approximation methods. 
 
-## Training procedure {#trainProcedure -}
+## Vector fields and distributions {#vecFieldsAndDistributions -}
 
 The next order of business is to train $\theta$ so that $x_1=\Phi_1(\Pinit)\approx \Pdata$. The main idea is to integrate tractable conditional solutions to obtain the full, marginalized solution. 
 Given a (continuous) probability path $p_{(\cdot)}(\cdot): \R\to \Delta(\R^d)$, we can relate it to a vector field $u_{(\cdot)}:\R\times \R^d\to \R^d$ which realizes it as follows: 
@@ -150,7 +155,7 @@ Fixing $\Pinit$ and set $\pd t p_t=0$ yields that the dynamics
 has stationary distribution $\Pinit$. This is called **Langevin dynamics**. In fact, under mild regularity conditions this SDE pulls any initial law $p'$ to the fixed point. 
 :::
 
-### Conditional to marginal {-}
+## Marginalization {#marginalization -}
 
 The following theorem is the main tool for converting conditional models into marginal ones. 
 
@@ -206,40 +211,133 @@ Zeroth-order intuition seems to suggest that "since everything is linear", let's
 Importantly, we don't obtain the clean refactoring of $\Pdata(z)$. The main reason why linear superposition is not correct is because the operator $u_t\mapsto \pd t p_t = -\nabla \cdot (u_tp_t)$ which maps $u_t$ to the distribution it effects **has additional dependence upon $p_t$**, which **depends nontrivially upon $x$**. Switching from conditional to marginal, we have $p_t(x \mid z)\mapsto p_t(x)=\int p_t(x\mid z)\Pdata(z)\, dz$; this introduces nontrivial $x$-dependence inside the divergence operator. 
 </details>
 
+<span style="color:green">
+Alternative explanation:
+</span> the marginal velocity at a point is the average over all conditional velocities, so $u_t(x) = \Exp_{z}[u_t(x\mid z) \mid X=x]$. It's critical to recognize here that the ensembling and conditioning is done w.r.t. the joint $p_t(x, z)$. 
+
 :::{.proposition name="marginalization of score function"}
 Given a distribution $p$, define its score function $\nabla \log p(x)$. The marginal score is connected to conditional score by 
 \[
-    \nabla \log p_t(x_t) = \int p_t(z\mid x_t) \nabla \log p_t(x_t\mid z)\, dz, \quad p_t(z\mid x_t) = \df{p_t(x\mid z)\Pinit(z)}{p_t(x)}
+    \nabla \log p_t(x_t) = \int p_t(z\mid x_t) \nabla \log p_t(x_t\mid z)\, dz, \quad p_t(z\mid x_t) = \df{p_t(x\mid z)\Pdata(z)}{p_t(x)}
 \] 
 :::
 
-### Flow matching {-}
 
-### Gaussian example {-}
+## Optimization {#optimization -} 
 
-The next order of business is to work out a concrete example. We begin by specifying a trivial conditional probability path: 
+Fixing $\Pdata$ and $p_t^\Target$, we can mathematically formulate $u_t^\Target$ using the continuity equation and marginalization trick. We parameterize $u_t^\theta$ in hopes of approximating $u_t^\Target$. This can be done by minimizing the (marginal) **flow matching loss**
+\[ 
+    \mca L_\FM(\theta) = \Exp_{t\sim \Unif, z\sim \Pdata, x\sim p_t(\cdot\mid z)} \left\|u_t^\theta(x) - u_t^\Target(x)\right\|^2 
+\] 
+The only problem being that $u_t^\Target$ is an intractable integral (sum for discrete datasets). A much more tractable quantity is the **conditional flow matching loss** which, upon drawing $z\sim \Pdata$, only asks the model to regress the conditional vector field for that $z$: 
+\[ 
+    \mca L_\CFM(\theta) = \Exp_{t\sim \Unif, z\sim \Pdata, x\sim p_t(\cdot\mid z)} \left\|u_t^\theta(x) - u_t^\Target(x\mid z)\right\|^2 
+\] 
+Similarly define the **score matching** and **conditional score matching** losses: 
+\begin{aligned}
+    \mca L_{\SM}(\theta) &= \Exp_{t\sim \Unif, x\sim p_t} \left\|\nabla \log p_t^\theta(x) - \nabla \log p_t^{\Target}(x)\right\|^2 \\
+    \mca L_{\CSM}(\theta) &= \Exp_{t\sim \Unif, z\sim \Pdata, x\sim p_t(\cdot\mid z)} \left\|\nabla \log p_t^\theta(x) - \nabla \log p_t^{\Target}(x\mid z)\right\|^2
+\end{aligned}
+
+:::{.theorem #opEq name="optimization equivalence"}
+$\nabla_\theta \mca L_\FM(\theta) = \nabla_\theta \mca L_\CFM(\theta)$. Similarly, $\nabla_\theta \mca L_\SM(\theta) = \nabla_\theta \mca L_\CSM(\theta)$. 
+:::
+
+<details>
+<summary>Direct substitution</summary>
+Expanding the squared norm for both losses, it suffices to show that 
+\[ 
+    \Exp[u_t^\theta(x)^T u_t^\Target(x)]
+    = \Exp[u_t^\theta(x)^T u_t^\Target(x\mid z)]
+\] 
+Expand integrals and apply the marginalization equation \@ref(thm:margTrick):
+\begin{aligned}
+    \Exp_{t, x\sim p_t}[u_t^\theta(x)^T u_t^\Target(x)] 
+    &= \iint p_t(x) u_t^\theta(x)^T \left[u_t^\Target(x)\right] \, dx \, dt  \\ 
+    &= \iint p_t(x) u_t^\theta(x)^T \int u_t^*(x\mid z) p_t(z\mid x)\, dz \, dx \, dt \\ 
+    &= \iiint u_t^\theta(x)^T u_t^*(x\mid z) p_t(x, z)\, dz\, dx\, dt \\ 
+    &= \Exp_{t, z\sim \Pdata, x\sim p_t(\cdot\mid z)} [u_t^\theta(x)^T u_t^*(x\mid z)]
+\end{aligned}
+</details>
+
+## Gaussian example {#gaussian -}
+
+The next order of business is to work out a concrete example; this is almost the only example we'll ever need to work out. We begin by specifying an almost trivial conditional probability path: 
 
 :::{.definition #condGaussianPath name="conditional Gaussian probability path"}
 Consider a single point $z\in \R^d$, the following **Gaussian probability path** continuously collapses $\Pinit$ to $\delta_z$: 
 \[ 
-    p_t(\cdot\mid z) = \mca N(\alpha_t z, \beta_t^2 I_d)
+    p_t^\Target(x\mid z) = \mca N(x; \alpha_t z, \beta_t^2 I_d) 
+    = \df 1 {(2\pi \beta_t^2)^{d/2}} \exp \left(-\df{\|x-\alpha_t z\|^2}{2\beta_t^2}\right)
 \] 
-where $\alpha_t, \beta_t$ are **noise schedulers** satisfying $\alpha_0=\beta_1=0$ and $\alpha_1=\beta_0=1$. 
+where $\alpha_t, \beta_t$ are **noise schedulers** satisfying $\alpha_0=\beta_1=0$ and $\alpha_1=\beta_0=1$. Note that $x, z\in \R^d$. Fixing $z$, note that $p_t$ is the pushforward measure of $\Pinit$ under the flow 
+\[ 
+    \psi_t^\Target(x\mid z) = \alpha_t z + \beta_t x 
+\] 
 :::
 
-Next, solve for the conditional vector field. 
-
-:::{.proposition name="Gaussian conditional vector field"}
+:::{.proposition #gaussianCVFS name="Gaussian conditional vector field and score"}
 Given $\alpha_t, \beta_t$, the following vector field realizes the conditional Gaussian probability path: 
 \[ 
-    u_t(x\mid z) = \left(\dot \alpha_t - \df{\dot \beta_t}{\beta_t} \alpha_t\right) z + \df{\dot \beta_t}{\beta_t} x 
+    u_t^\Target(x\mid z) = \left(\dot \alpha_t - \df{\dot \beta_t}{\beta_t} \alpha_t\right) z + \df{\dot \beta_t}{\beta_t} x 
 \] 
 For the special linear-scheduler case $\alpha_t=t, \beta_t=1-t$, we obtain 
 \[ 
     u_t(x\mid z) = \left(1 + \df{t}{1-t}\right) z - \df{1}{1-t} x = \df {z-x} {1-t}
 \] 
-:::
-The score function is easily shown to be 
+The score function is 
 \[ 
-    \nabla \log p_t(x\mid z) = -\df{x - \alpha_t z}{\beta_t^2} 
+    \nabla \log p_t^\Target(x\mid z) = -\df{x - \alpha_t z}{\beta_t^2} 
 \] 
+:::
+
+<details>
+<summary><span style="color:blue">IMPORTANT proof: instead of directly verifying the continuity equation, given $p_t$ construct vector field by (1) constructing a flow $\psi_t(x_0)$ whose pushforward measure of $p_0$ is $p_t$, and (2) finding $u_t$ such that $\pd t \psi_t(x_0) = u_t(\psi_t(x_0))$</span></summary>
+Drop the $\Target$ superscript to reduce clutter. Instead of doing the hairy calculation for $\pd t p_t$, we recall that $p_t$ is the pushforward of $p_0=\mca N(0, I_d)$ under $\psi_t$, so it suffices to show that 
+\[ 
+    \pd t \psi_t(x\mid z) = u_t(\psi_t(x\mid z)\mid z) 
+\] 
+Unpacking this a bit more: fixing $z$ throughout, the map $x\mapsto \psi_t(x\mid z)$ sends initial $x\sim \Pinit$ to where it would be at time $t$ such that $x_t=\psi_t(x_0\mid z)\sim p_t$ for all $t$. Also recall that given flow $x_0\mapsto \Phi_t(x_0)$, the vector field generator of the flow $u_t$ satisfies 
+\[ 
+    \pd t \Phi_t(x_0) = \psi_t(x_t) = \psi_t(\Phi_t(x_0))
+\] 
+Returning to our original equation, we have 
+\begin{aligned}
+    u_t(\psi_t(x\mid z)\mid z)
+        &= \left(
+            \dot \alpha_t - \df{\dot \beta_t}{\beta_t} \alpha_t 
+        \right) z + \df{\dot \beta_t}{\beta_t} (\alpha_t z + \beta_t x) \\ 
+        &= \dot \alpha_t z + \dot \beta_t x = \pd t \psi_t 
+\end{aligned}
+</details>
+
+- Again, there are many vector fields which can realize the Gaussian conditional probability path. This gauge freedom is embedded in our choice of $\psi_t$: there are many flow maps which realize the same specified pushforward measure. 
+
+:::{.proposition #gaussianFormulae name="flow and score matching for Gaussian paths"}
+Applying \@ref(prp:gaussianCVFS), we obtain the losses which make training protocol self-evident: 
+\begin{aligned}
+    \mca L_\CFM(\theta)
+    &= \Exp_{t\sim \Unif, z\sim \Pdata, x\sim \mca N(\alpha_tz, \beta_t^2I_d)} \left\|
+        u_t^\theta(x) - \left(\dot \alpha(t) - \df{\dot \beta_t}{\beta_t} \alpha_t \right)z 
+        - \df{\dot \beta_t}{\beta_t} x 
+    \right\|^2 \\ 
+    &= \Exp_{t\sim \Unif, z\sim \Pdata, \epsilon \sim \mca N(0, I_d)} \left\|
+        u_t^\theta(\alpha_t z + \beta_t \epsilon) + (\dot \alpha_t z + \dot \beta_t \epsilon) 
+    \right\|
+\end{aligned}
+For simple linear interpolation, this instantiates to $\mca L_\CFM(\theta) = \Exp \|u_t^\theta(tz + \bar t\epsilon) - (z-\epsilon)^2\|^2$. In terms of score, we obtain 
+\begin{aligned}
+    \mca L_\CSM(\theta)
+    &= \Exp_{t\sim \Unif, z\sim \Pdata, x\sim p_t(\cdot\mid z)} \left\|
+        s_t^\theta(x) + \df{x - \alpha_tz}{\beta_t^2}
+    \right\| \\ 
+    &= \Exp_{t\sim \Unif, z\sim \Pdata, \epsilon \sim \mca N(0, I_d)} \left\|
+       s_t^\theta(\alpha_t z + \beta_t\epsilon) + \df{\epsilon}{\beta_t}
+    \right\|^2
+\end{aligned}
+The score network essentially tries to learn the noise $\epsilon$ which used to corrupt data. To avoid $\beta\to 0$ instability, Denoising Diffusion Probabilistic Models (DDPM) proposed to drop $1/\beta$ coefficient and predict $\epsilon_t^\theta$. Some algebra further shows that predicting the score is equivalent to predicting the target vector field: 
+\[ 
+    u_t^\Target(x\mid z) = \left(\beta_t^2 \df{\dot \alpha_t}{\alpha_t} - \dot \beta_t \beta_t\right) \nabla \log p_t(x\mid z) + \df{\dot \alpha_t}{\alpha_t} x 
+\] 
+Since both quantities share marginalization formula, the same equivalence holds for marginal targets. 
+:::

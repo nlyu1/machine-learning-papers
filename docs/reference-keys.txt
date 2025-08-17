@@ -2,6 +2,8 @@ thm:contEq
 thm:fokkerPlanck
 thm:margTrick
 prp:unlabeled-div-2
+thm:opEq
 def:condGaussianPath
-prp:unlabeled-div-3
+prp:gaussianCVFS
+prp:gaussianFormulae
 flowDiffusion
