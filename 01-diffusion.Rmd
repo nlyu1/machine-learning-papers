@@ -9,7 +9,7 @@ This section explores flow matching and diffusion models based on the [MIT lectu
 3. Conditioning on a single data point $z$ with dirac delta target $\delta_z$, the conditional vector field has simple analytic solution. Apply the marginalization trick \@ref(thm:margTrick) to generalize to whole empirical data distribution. 
     - <u>Very important remark</u>: fixing $\Pinit$, the mapping $u_t\mapsto p_t$ **is not linear**. The vector field $u_t$ specifies the **probability velocity**, while mixture linearly mixes the **probability flux** $u_tp_t$.
 4. The marginal vector field \@ref(thm:margTrick) and score generally have intractable integrals, but crucially, optimizing MSE to the conditional v. marginal distribution have the same desired behavior (theorem \@ref(thm:opEq)). 
-5. <span style="blue"> Crux of using deep modeling </span>: having solved the simple conditional case analytically, we're relying on the model to: 
+5. <span style="blue"> Key leverage via deep learning </span>: having solved the simple conditional case analytically, we're relying on the model to: 
     - Model marginal quantities by optimization equivalence, without resorting to intractable integrals **(very smart theme!!)**
     - Generalize / interpolate the vector field to assign mass to unseen regions of the data manifold. 
 6. Under the [Gaussian probability path](@gaussian), the network essentially learns to predict the noise which is used to corrupt data; conversion between score vs target network targets \@ref(prp:gaussianFormulae). 

@@ -137,7 +137,7 @@ Conversely, given <span class="math inline">\(p_t\)</span>, we can always constr
 <li><u>Very important remark</u>: fixing <span class="math inline">\(p_{\mathrm{init}}\)</span>, the mapping <span class="math inline">\(u_t\mapsto p_t\)</span> <strong>is not linear</strong>. The vector field <span class="math inline">\(u_t\)</span> specifies the <strong>probability velocity</strong>, while mixture linearly mixes the <strong>probability flux</strong> <span class="math inline">\(u_tp_t\)</span>.</li>
 </ul></li>
 <li>The marginal vector field <a href="flowDiffusion.html#thm:margTrick">1.3</a> and score generally have intractable integrals, but crucially, optimizing MSE to the conditional v. marginal distribution have the same desired behavior (theorem <a href="flowDiffusion.html#thm:opEq">1.4</a>).</li>
-<li><span style="blue"> Crux of using deep modeling </span>: having solved the simple conditional case analytically, we’re relying on the model to:
+<li><span style="blue"> Key leverage via deep learning </span>: having solved the simple conditional case analytically, we’re relying on the model to:
 <ul>
 <li>Model marginal quantities by optimization equivalence, without resorting to intractable integrals <strong>(very smart theme!!)</strong></li>
 <li>Generalize / interpolate the vector field to assign mass to unseen regions of the data manifold.</li>
