@@ -47,6 +47,7 @@ link-citations: true
 \newcommand{\CFM}{\mrm{CFM}}
 \newcommand{\SM}{\mrm{SM}}
 \newcommand{\CSM}{\mrm{CSM}}
+\newcommand{\Guided}{\mrm{guided}}
 
 
 

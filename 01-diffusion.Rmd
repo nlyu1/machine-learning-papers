@@ -1,6 +1,6 @@
 # Flow Matching and Diffusion {#flowDiffusion}
 
-This section explores flow matching and diffusion models based on the [MIT lecture series](https://diffusion.csail.mit.edu/). Also see lecture notes [@holderrieth2025introduction] and [materials](#https://diffusion.csail.mit.edu/#lectures). More advanced, supplemental proofs are referenced from [@li2025unified]. 
+This section explores flow matching and diffusion models based on the [MIT lecture series](https://diffusion.csail.mit.edu/). Also see lecture notes [@holderrieth2025introduction] and [materials](https://diffusion.csail.mit.edu/#lectures). More advanced, supplemental proofs are referenced from [@li2025unified]. 
 
 1. Flow models parameterize the **vector field** (in the same space as data, for Euclidean data) which induces a specified probability path. Diffusion models generalize by adding Brownian noise, PDE $\to$ SDE. 
 2. Crucial bridge between vector field and probability path: continuity equation \@ref(thm:contEq)  resp. \@ref(thm:fokkerPlanck) Fokker-Planck in SDE case. 
@@ -13,6 +13,7 @@ This section explores flow matching and diffusion models based on the [MIT lectu
     - Model marginal quantities by optimization equivalence, without resorting to intractable integrals **(very smart theme!!)**
     - Generalize / interpolate the vector field to assign mass to unseen regions of the data manifold. 
 6. Under the [Gaussian probability path](@gaussian), the network essentially learns to predict the noise which is used to corrupt data; conversion between score vs target network targets \@ref(prp:gaussianFormulae). 
+7. Classifier free guidance \@ref(def:cfg) contrastively amplifies the guided v. unguided vector fields. Under Gaussian path, this has the nice interpretation of manually upweighing the score contribution from classification log-likelihood. See detailed training procedure \@ref(def:cfgProtocol). 
 
 ## Modeling {#prelim -}
 
@@ -195,7 +196,7 @@ Per continuity equation \@ref(thm:contEq), it suffices to check that the diverge
 Several important points:
 
 1. Fixing $t$, we're working with the joint distribution over $z\sim \Pdata$ and $p_t(x_t\mid z)$. This underpins the simplification $p_t(x) p_t(z\mid x) = p_t(x\mid z) \Pdata(z)$. 
-2. DIvergence is taken w.r.t. the $x$ variable! This is why $\Pdata(z)$ slides out of divergence as a constant. 
+2. Divergence is taken w.r.t. the $x$ variable! This is why $\Pdata(z)$ slides out of divergence as a constant. 
 3. Proof sketch: compute the divergence by substituting ansatz for the marginal vector field $u_t$, apply continuity equation to conditional vector field to convert divergence to time-derivative, then marginalize. 
 
 <details>
@@ -243,9 +244,7 @@ Similarly define the **score matching** and **conditional score matching** losse
 $\nabla_\theta \mca L_\FM(\theta) = \nabla_\theta \mca L_\CFM(\theta)$. Similarly, $\nabla_\theta \mca L_\SM(\theta) = \nabla_\theta \mca L_\CSM(\theta)$. 
 :::
 
-<details>
-<summary>Direct substitution</summary>
-Expanding the squared norm for both losses, it suffices to show that 
+_Proof:_ Expanding the squared norm for both losses, it suffices to show that 
 \[ 
     \Exp[u_t^\theta(x)^T u_t^\Target(x)]
     = \Exp[u_t^\theta(x)^T u_t^\Target(x\mid z)]
@@ -258,7 +257,6 @@ Expand integrals and apply the marginalization equation \@ref(thm:margTrick):
     &= \iiint u_t^\theta(x)^T u_t^*(x\mid z) p_t(x, z)\, dz\, dx\, dt \\ 
     &= \Exp_{t, z\sim \Pdata, x\sim p_t(\cdot\mid z)} [u_t^\theta(x)^T u_t^*(x\mid z)]
 \end{aligned}
-</details>
 
 ## Gaussian example {#gaussian -}
 
@@ -325,7 +323,7 @@ Applying \@ref(prp:gaussianCVFS), we obtain the losses which make training proto
         u_t^\theta(\alpha_t z + \beta_t \epsilon) + (\dot \alpha_t z + \dot \beta_t \epsilon) 
     \right\|
 \end{aligned}
-For simple linear interpolation, this instantiates to $\mca L_\CFM(\theta) = \Exp \|u_t^\theta(tz + \bar t\epsilon) - (z-\epsilon)^2\|^2$. In terms of score, we obtain 
+For simple linear interpolation, this instantiates to $\mca L_\CFM(\theta) = \Exp \|u_t^\theta(tz + \bar t\epsilon) - (z-\epsilon)\|^2$. In terms of score, we obtain 
 \begin{aligned}
     \mca L_\CSM(\theta)
     &= \Exp_{t\sim \Unif, z\sim \Pdata, x\sim p_t(\cdot\mid z)} \left\|
@@ -341,3 +339,76 @@ The score network essentially tries to learn the noise $\epsilon$ which used to 
 \] 
 Since both quantities share marginalization formula, the same equivalence holds for marginal targets. 
 :::
+
+## Guidance {#guidance -}
+
+We would further like to be able to condition generation on prompts / features / past data $y\in \mca Y$. The generation process becomes 
+\[ 
+    Y\xrightarrow{\Pdata(z\mid y)} Z\xrightarrow{p_t(x\mid z)} X
+\] 
+
+:::{.definition name="guided diffusion model"}
+A guided diffusion (flow) model consists of a guided vector field $u_t^\theta(\cdot \mid y)$ 
+which accepts $t, y\in \mca Y$ to output change in $X$. Essentially we're trying to jointly model $\Pdata(z, y)$. 
+:::
+
+Fixing $y$, the conditional flow matching loss writes 
+\[ 
+    \mca L_{\CFM, y}(\theta) = \Exp_{t\sim \Unif, z\sim \Pdata(\cdot\mid y), x\sim p_t(\cdot\mid z)} \left\|u_t^\theta(x) - u_t^\Target(x\mid z)\right\|^2 
+\] 
+Take expectation over $y$ to obtain the guided conditional loss 
+\[ 
+    \mca L_\CFM^\Guided(\theta) = \Exp_{t\sim \Unif, (z, y)\sim \Pdata(z, y), x\sim p_t(\cdot\mid z)} \|u_t^\theta(x\mid y) - u_t^\Target(x\mid z) \|^2
+\] 
+Empirically, people have observed that the loss above does not enforce guidance strongly enough. Recalling the linear Gaussian formula \@ref(prp:gaussianFormulae), we can rewrite 
+\[ 
+    u_t^\Target(x\mid y) = a_t x + b_t \nabla_x \log p_t(x\mid y), \quad (a_t, b_t) = \left(\df{\dot \alpha_t}{\alpha_t}, \df{\dot \alpha_t \beta_t^2 - \dot \beta_t \beta_t \alpha_t}{\alpha_t}\right) 
+\] 
+Rewrite guided score as $\nabla \log p_t(x\mid y) = \nabla \log p_t(y\mid x) + \nabla \log p_t(x)$: 
+- Guided score at noisily guided data $x_t$ is equivalent to the un-guided score of $x_t$, plus log-likelihood of the guidance label $y$, given $x_t$. 
+
+To artificially amplify guidance, consider introducing the **guidance scale** $w>1$ and rearrange
+\begin{aligned}
+    \tilde u_t(x\mid y) 
+    &= a_t x + b_t \left(
+        \nabla \log p_t(x) + w\, \nabla \log p_t(y\mid x) \right) \\ 
+    &= a_t x + b_t \left(
+        \nabla \log p_t(x) + w\, (\nabla \log p_t(x\mid y) - \nabla \log p_t(x)) \right) \\ 
+    &= a_t x + b_t(1-w) \nabla \log p_t(x) + w \nabla \log p_t(x\mid y) \\ 
+    &= w\, u^\Target_t(x\mid y) + \bar w\, u^\Target_t(x) 
+\end{aligned}
+So for Gaussian conditional probability path, <span style="color:blue">up-scaling guidance from classifier = linearly interpolating between $u_t^\Target(x\mid y)$ and $u_t^\Target(x)$.$</span>. 
+
+:::{.definition #cfg name="classifier-free guidance"}
+Per the discussion above, the **classifier-free guided** vector field and scores are defined, given guidance scale $w>1$, as 
+\begin{aligned}
+    \tilde u_t(x\mid y) 
+    &= w\, u^\Target_t(x\mid y) + \bar w\, u^\Target_t(x), \quad 
+    \tilde s_t(x\mid y) 
+    = w\, s^\Target_t(x\mid y) + \bar w\, s^\Target_t(x) 
+\end{aligned}
+:::
+
+:::{.definition #cfgProtocol name="training protocol for linear Gaussian path"}
+Given label-data pairs $(y_j, z_j)$, guidance scale $w>1$, and probability $\eta\in (0, 1)$, the training procedure for CFG-flow matching with linear Gaussian probability path \@ref(def:condGaussianPath) is as follows:
+
+1. Sample a batch $(y_j, z_j)$ from dataset. 
+2. Given the batch, sample a boolean mask $(\xi_1, \dots, \xi_n)$ with probability $\eta$ denoting whether we're ignoring the guidance label on the sample. Replace $y_j\mapsto \xi_j \emptyset + \bar \xi_j y_j$. 
+3. Sample $t\sim \Unif, \epsilon \sim \mca N(0, I_d)$ batch-wise. 
+4. Minimize flow matching loss: 
+\begin{aligned}
+    \mca L^{\mrm{CFG}}_\CSM 
+    = \df 1 n \sum_{j=1}^n \left\|
+        u_{t_j}^\theta(t_jz_j + \bar t_j\epsilon_j\mid y_j) - (z_j-\epsilon_j)
+    \right\|^2
+\end{aligned}
+
+This trains the model to match flow of $u_t^\Target(x\mid y)$ for conditional case, and $u_t^\Target(x\mid \emptyset)$ for unconditional case. Guided sampling given $y$: 
+
+1. Initialize $x_0\sim \Pinit$. 
+2. Simulate ODE $dx_t = \left[ w\, u^\theta_t(x_t\mid y)  + \bar w\, u^\theta_t(x_t\mid \emptyset)
+\right]\, dt$ 
+3. Output $x_1$. 
+:::
+
+Empirically, we want at least O(1) unconditional samples per batch on average. The choice $\eta=0.1$ is common. 

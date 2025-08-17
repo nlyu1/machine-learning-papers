@@ -6,4 +6,7 @@ thm:opEq
 def:condGaussianPath
 prp:gaussianCVFS
 prp:gaussianFormulae
+def:unlabeled-div-3
+def:cfg
+def:cfgProtocol
 flowDiffusion

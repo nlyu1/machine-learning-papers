@@ -102,6 +102,7 @@ div.csl-indent {
 <li class="chapter" data-level="" data-path="flowDiffusion.html"><a href="flowDiffusion.html#marginalization"><i class="fa fa-check"></i>Marginalization</a></li>
 <li class="chapter" data-level="" data-path="flowDiffusion.html"><a href="flowDiffusion.html#optimization"><i class="fa fa-check"></i>Optimization</a></li>
 <li class="chapter" data-level="" data-path="flowDiffusion.html"><a href="flowDiffusion.html#gaussian"><i class="fa fa-check"></i>Gaussian example</a></li>
+<li class="chapter" data-level="" data-path="flowDiffusion.html"><a href="flowDiffusion.html#guidance"><i class="fa fa-check"></i>Guidance</a></li>
 </ul></li>
 <li class="chapter" data-level="" data-path="bibliography.html"><a href="bibliography.html"><i class="fa fa-check"></i>Bibliography</a></li>
 </ul>
@@ -123,7 +124,7 @@ div.csl-indent {
             <section class="normal" id="section-">
 <div id="flowDiffusion" class="section level1 hasAnchor" number="1">
 <h1><span class="header-section-number">1</span> Flow Matching and Diffusion<a href="flowDiffusion.html#flowDiffusion" class="anchor-section" aria-label="Anchor link to header"></a></h1>
-<p>This section explores flow matching and diffusion models based on the <a href="https://diffusion.csail.mit.edu/">MIT lecture series</a>. Also see lecture notes <span class="citation">(<a href="#ref-holderrieth2025introduction">Holderrieth and Erives 2025</a>)</span> and <a href="#https://diffusion.csail.mit.edu/#lectures">materials</a>. More advanced, supplemental proofs are referenced from <span class="citation">(<a href="#ref-li2025unified">Li 2025</a>)</span>.</p>
+<p>This section explores flow matching and diffusion models based on the <a href="https://diffusion.csail.mit.edu/">MIT lecture series</a>. Also see lecture notes <span class="citation">(<a href="#ref-holderrieth2025introduction">Holderrieth and Erives 2025</a>)</span> and <a href="https://diffusion.csail.mit.edu/#lectures">materials</a>. More advanced, supplemental proofs are referenced from <span class="citation">(<a href="#ref-li2025unified">Li 2025</a>)</span>.</p>
 <ol style="list-style-type: decimal">
 <li>Flow models parameterize the <strong>vector field</strong> (in the same space as data, for Euclidean data) which induces a specified probability path. Diffusion models generalize by adding Brownian noise, PDE <span class="math inline">\(\to\)</span> SDE.</li>
 <li>Crucial bridge between vector field and probability path: continuity equation <a href="flowDiffusion.html#thm:contEq">1.1</a> resp. <a href="flowDiffusion.html#thm:fokkerPlanck">1.2</a> Fokker-Planck in SDE case.
@@ -142,6 +143,7 @@ Conversely, given <span class="math inline">\(p_t\)</span>, we can always constr
 <li>Generalize / interpolate the vector field to assign mass to unseen regions of the data manifold.</li>
 </ul></li>
 <li>Under the <a href="@gaussian">Gaussian probability path</a>, the network essentially learns to predict the noise which is used to corrupt data; conversion between score vs target network targets <a href="flowDiffusion.html#prp:gaussianFormulae">1.3</a>.</li>
+<li>Classifier free guidance <a href="flowDiffusion.html#def:cfg">1.3</a> contrastively amplifies the guided v. unguided vector fields. Under Gaussian path, this has the nice interpretation of manually upweighing the score contribution from classification log-likelihood. See detailed training procedure <a href="flowDiffusion.html#def:cfgProtocol">1.4</a>.</li>
 </ol>
 <div id="prelim" class="section level2 unnumbered hasAnchor">
 <h2>Modeling<a href="flowDiffusion.html#prelim" class="anchor-section" aria-label="Anchor link to header"></a></h2>
@@ -322,7 +324,7 @@ Per continuity equation <a href="flowDiffusion.html#thm:contEq">1.1</a>, it suff
 <p>Several important points:</p>
 <ol style="list-style-type: decimal">
 <li>Fixing <span class="math inline">\(t\)</span>, we’re working with the joint distribution over <span class="math inline">\(z\sim p_{\mathrm{data}}\)</span> and <span class="math inline">\(p_t(x_t\mid z)\)</span>. This underpins the simplification <span class="math inline">\(p_t(x) p_t(z\mid x) = p_t(x\mid z) p_{\mathrm{data}}(z)\)</span>.</li>
-<li>DIvergence is taken w.r.t. the <span class="math inline">\(x\)</span> variable! This is why <span class="math inline">\(p_{\mathrm{data}}(z)\)</span> slides out of divergence as a constant.</li>
+<li>Divergence is taken w.r.t. the <span class="math inline">\(x\)</span> variable! This is why <span class="math inline">\(p_{\mathrm{data}}(z)\)</span> slides out of divergence as a constant.</li>
 <li>Proof sketch: compute the divergence by substituting ansatz for the marginal vector field <span class="math inline">\(u_t\)</span>, apply continuity equation to conditional vector field to convert divergence to time-derivative, then marginalize.</li>
 </ol>
 <details>
@@ -367,11 +369,7 @@ Similarly define the <strong>score matching</strong> and <strong>conditional sco
 <div class="theorem">
 <p><span id="thm:opEq" class="theorem"><strong>Theorem 1.4  (optimization equivalence) </strong></span><span class="math inline">\(\nabla_\theta \mathcal L_\mathrm{FM}(\theta) = \nabla_\theta \mathcal L_\mathrm{CFM}(\theta)\)</span>. Similarly, <span class="math inline">\(\nabla_\theta \mathcal L_\mathrm{SM}(\theta) = \nabla_\theta \mathcal L_\mathrm{CSM}(\theta)\)</span>.</p>
 </div>
-<details>
-<summary>
-Direct substitution
-</summary>
-Expanding the squared norm for both losses, it suffices to show that
+<em>Proof:</em> Expanding the squared norm for both losses, it suffices to show that
 <span class="math display">\[
     \mathbb{E}[u_t^\theta(x)^T u_t^\mathrm{target}(x)]
     = \mathbb{E}[u_t^\theta(x)^T u_t^\mathrm{target}(x\mid z)]
@@ -384,7 +382,6 @@ Expand integrals and apply the marginalization equation <a href="flowDiffusion.h
     &amp;= \iiint u_t^\theta(x)^T u_t^*(x\mid z) p_t(x, z)\, dz\, dx\, dt \\
     &amp;= \mathbb{E}_{t, z\sim p_{\mathrm{data}}, x\sim p_t(\cdot\mid z)} [u_t^\theta(x)^T u_t^*(x\mid z)]
 \end{aligned}\]</span>
-</details>
 </div>
 <div id="gaussian" class="section level2 unnumbered hasAnchor">
 <h2>Gaussian example<a href="flowDiffusion.html#gaussian" class="anchor-section" aria-label="Anchor link to header"></a></h2>
@@ -451,7 +448,7 @@ Applying <a href="flowDiffusion.html#prp:gaussianCVFS">1.2</a>, we obtain the lo
         u_t^\theta(\alpha_t z + \beta_t \epsilon) + (\dot \alpha_t z + \dot \beta_t \epsilon)
     \right\|
 \end{aligned}\]</span>
-For simple linear interpolation, this instantiates to <span class="math inline">\(\mathcal L_\mathrm{CFM}(\theta) = \mathbb{E}\|u_t^\theta(tz + \bar t\epsilon) - (z-\epsilon)^2\|^2\)</span>. In terms of score, we obtain
+For simple linear interpolation, this instantiates to <span class="math inline">\(\mathcal L_\mathrm{CFM}(\theta) = \mathbb{E}\|u_t^\theta(tz + \bar t\epsilon) - (z-\epsilon)\|^2\)</span>. In terms of score, we obtain
 <span class="math display">\[\begin{aligned}
     \mathcal L_\mathrm{CSM}(\theta)
     &amp;= \mathbb{E}_{t\sim \mathrm{Unif}, z\sim p_{\mathrm{data}}, x\sim p_t(\cdot\mid z)} \left\|
@@ -467,6 +464,74 @@ For simple linear interpolation, this instantiates to <span class="math inline">
 \]</span>
 Since both quantities share marginalization formula, the same equivalence holds for marginal targets.</p>
 </div>
+</div>
+<div id="guidance" class="section level2 unnumbered hasAnchor">
+<h2>Guidance<a href="flowDiffusion.html#guidance" class="anchor-section" aria-label="Anchor link to header"></a></h2>
+<p>We would further like to be able to condition generation on prompts / features / past data <span class="math inline">\(y\in \mathcal Y\)</span>. The generation process becomes
+<span class="math display">\[
+    Y\xrightarrow{p_{\mathrm{data}}(z\mid y)} Z\xrightarrow{p_t(x\mid z)} X
+\]</span></p>
+<div class="definition">
+<p><span id="def:unlabeled-div-3" class="definition"><strong>Definition 1.2  (guided diffusion model) </strong></span>A guided diffusion (flow) model consists of a guided vector field <span class="math inline">\(u_t^\theta(\cdot \mid y)\)</span>
+which accepts <span class="math inline">\(t, y\in \mathcal Y\)</span> to output change in <span class="math inline">\(X\)</span>. Essentially we’re trying to jointly model <span class="math inline">\(p_{\mathrm{data}}(z, y)\)</span>.</p>
+</div>
+<p>Fixing <span class="math inline">\(y\)</span>, the conditional flow matching loss writes
+<span class="math display">\[
+    \mathcal L_{\mathrm{CFM}, y}(\theta) = \mathbb{E}_{t\sim \mathrm{Unif}, z\sim p_{\mathrm{data}}(\cdot\mid y), x\sim p_t(\cdot\mid z)} \left\|u_t^\theta(x) - u_t^\mathrm{target}(x\mid z)\right\|^2
+\]</span>
+Take expectation over <span class="math inline">\(y\)</span> to obtain the guided conditional loss
+<span class="math display">\[
+    \mathcal L_\mathrm{CFM}^\mathrm{guided}(\theta) = \mathbb{E}_{t\sim \mathrm{Unif}, (z, y)\sim p_{\mathrm{data}}(z, y), x\sim p_t(\cdot\mid z)} \|u_t^\theta(x\mid y) - u_t^\mathrm{target}(x\mid z) \|^2
+\]</span>
+Empirically, people have observed that the loss above does not enforce guidance strongly enough. Recalling the linear Gaussian formula <a href="flowDiffusion.html#prp:gaussianFormulae">1.3</a>, we can rewrite
+<span class="math display">\[
+    u_t^\mathrm{target}(x\mid y) = a_t x + b_t \nabla_x \log p_t(x\mid y), \quad (a_t, b_t) = \left(\dfrac{\dot \alpha_t}{\alpha_t}, \dfrac{\dot \alpha_t \beta_t^2 - \dot \beta_t \beta_t \alpha_t}{\alpha_t}\right)
+\]</span>
+Rewrite guided score as <span class="math inline">\(\nabla \log p_t(x\mid y) = \nabla \log p_t(y\mid x) + \nabla \log p_t(x)\)</span>:
+- Guided score at noisily guided data <span class="math inline">\(x_t\)</span> is equivalent to the un-guided score of <span class="math inline">\(x_t\)</span>, plus log-likelihood of the guidance label <span class="math inline">\(y\)</span>, given <span class="math inline">\(x_t\)</span>.</p>
+To artificially amplify guidance, consider introducing the <strong>guidance scale</strong> <span class="math inline">\(w&gt;1\)</span> and rearrange
+<span class="math display">\[\begin{aligned}
+    \tilde u_t(x\mid y)
+    &amp;= a_t x + b_t \left(
+        \nabla \log p_t(x) + w\, \nabla \log p_t(y\mid x) \right) \\
+    &amp;= a_t x + b_t \left(
+        \nabla \log p_t(x) + w\, (\nabla \log p_t(x\mid y) - \nabla \log p_t(x)) \right) \\
+    &amp;= a_t x + b_t(1-w) \nabla \log p_t(x) + w \nabla \log p_t(x\mid y) \\
+    &amp;= w\, u^\mathrm{target}_t(x\mid y) + \bar w\, u^\mathrm{target}_t(x)
+\end{aligned}\]</span>
+<p>So for Gaussian conditional probability path, <span style="color:blue">up-scaling guidance from classifier = linearly interpolating between <span class="math inline">\(u_t^\mathrm{target}(x\mid y)\)</span> and <span class="math inline">\(u_t^\mathrm{target}(x)\)</span>.$</span>.</p>
+<div class="definition">
+<p><span id="def:cfg" class="definition"><strong>Definition 1.3  (classifier-free guidance) </strong></span></p>
+Per the discussion above, the <strong>classifier-free guided</strong> vector field and scores are defined, given guidance scale <span class="math inline">\(w&gt;1\)</span>, as
+<span class="math display">\[\begin{aligned}
+    \tilde u_t(x\mid y)
+    &amp;= w\, u^\mathrm{target}_t(x\mid y) + \bar w\, u^\mathrm{target}_t(x), \quad
+    \tilde s_t(x\mid y)
+    = w\, s^\mathrm{target}_t(x\mid y) + \bar w\, s^\mathrm{target}_t(x)
+\end{aligned}\]</span>
+</div>
+<div class="definition">
+<p><span id="def:cfgProtocol" class="definition"><strong>Definition 1.4  (training protocol for linear Gaussian path) </strong></span>Given label-data pairs <span class="math inline">\((y_j, z_j)\)</span>, guidance scale <span class="math inline">\(w&gt;1\)</span>, and probability <span class="math inline">\(\eta\in (0, 1)\)</span>, the training procedure for CFG-flow matching with linear Gaussian probability path <a href="flowDiffusion.html#def:condGaussianPath">1.1</a> is as follows:</p>
+<ol style="list-style-type: decimal">
+<li>Sample a batch <span class="math inline">\((y_j, z_j)\)</span> from dataset.</li>
+<li>Given the batch, sample a boolean mask <span class="math inline">\((\xi_1, \dots, \xi_n)\)</span> with probability <span class="math inline">\(\eta\)</span> denoting whether we’re ignoring the guidance label on the sample. Replace <span class="math inline">\(y_j\mapsto \xi_j \emptyset + \bar \xi_j y_j\)</span>.</li>
+<li>Sample <span class="math inline">\(t\sim \mathrm{Unif}, \epsilon \sim \mathcal N(0, I_d)\)</span> batch-wise.</li>
+<li>Minimize flow matching loss:
+<span class="math display">\[\begin{aligned}
+\mathcal L^{\mathrm{CFG}}_\mathrm{CSM}
+= \dfrac 1 n \sum_{j=1}^n \left\|
+     u_{t_j}^\theta(t_jz_j + \bar t_j\epsilon_j\mid y_j) - (z_j-\epsilon_j)
+\right\|^2
+\end{aligned}\]</span></li>
+</ol>
+<p>This trains the model to match flow of <span class="math inline">\(u_t^\mathrm{target}(x\mid y)\)</span> for conditional case, and <span class="math inline">\(u_t^\mathrm{target}(x\mid \emptyset)\)</span> for unconditional case. Guided sampling given <span class="math inline">\(y\)</span>:</p>
+<ol style="list-style-type: decimal">
+<li>Initialize <span class="math inline">\(x_0\sim p_{\mathrm{init}}\)</span>.</li>
+<li>Simulate ODE <span class="math inline">\(dx_t = \left[ w\, u^\theta_t(x_t\mid y) + \bar w\, u^\theta_t(x_t\mid \emptyset) \right]\, dt\)</span></li>
+<li>Output <span class="math inline">\(x_1\)</span>.</li>
+</ol>
+</div>
+<p>Empirically, we want at least O(1) unconditional samples per batch on average. The choice <span class="math inline">\(\eta=0.1\)</span> is common.</p>
 
 </div>
 </div>
